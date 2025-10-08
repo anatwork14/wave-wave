@@ -16,7 +16,6 @@ type NavLink = {
 function NavigationItem({ name, href }: NavLink) {
   const pathname = usePathname();
   const isActive = pathname === href;
-
   return (
     <Link
       href={href}
@@ -47,6 +46,8 @@ export default function Navigation() {
     { name: "Từ điển", href: "/dictionary" },
     { name: "Chat Wave", href: "/chat" },
   ];
+
+  if (pathname === "/dashboard") return null;
 
   return (
     <nav className="fixed top-0 left-0 w-full bg-white/70 backdrop-blur-md z-50">
