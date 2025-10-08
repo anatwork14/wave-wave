@@ -8,6 +8,7 @@ import {
   Globe2,
   Home,
   MessageSquareCodeIcon,
+  PlusCircle,
 } from "lucide-react";
 
 import { NavUser } from "@/components/nav-user";
@@ -28,8 +29,9 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Button } from "./ui/button";
 
-// This is sample data
+// ✅ Sample data
 const data = {
   user: {
     name: "shadcn",
@@ -37,30 +39,10 @@ const data = {
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
-    {
-      title: "Trang chủ",
-      url: "/",
-      icon: Home,
-      isActive: true,
-    },
-    {
-      title: "Học tập",
-      url: "/study",
-      icon: BookOpen,
-      isActive: false,
-    },
-    {
-      title: "Cộng đồng",
-      url: "/community",
-      icon: Globe2,
-      isActive: false,
-    },
-    {
-      title: "Từ điển",
-      url: "/dictionary",
-      icon: Database,
-      isActive: false,
-    },
+    { title: "Trang chủ", url: "/", icon: Home, isActive: true },
+    { title: "Học tập", url: "/study", icon: BookOpen, isActive: false },
+    { title: "Cộng đồng", url: "/community", icon: Globe2, isActive: false },
+    { title: "Từ điển", url: "/dictionary", icon: Database, isActive: false },
     {
       title: "Chat Wave",
       url: "/chat",
@@ -68,54 +50,103 @@ const data = {
       isActive: false,
     },
   ],
-  chat_history: [
+  chat_sessions: [
     {
-      summary: "William Smith",
-      content: "Meeting Tomorrow",
-      date: "09:34 AM",
-      teaser:
-        "Hi team, just a reminder about our meeting tomorrow at 10 AM.\nPlease come prepared with your project updates.",
+      id: 1,
+      title: "Meeting Tomorrow",
+      summary: `Reminder about tomorrow’s meeting at 10 AM`,
+      time: "09:34 AM",
+      messages: [
+        {
+          role: "user",
+          content:
+            "Hi team, just a reminder about our meeting tomorrow at 10 AM. Please come prepared with your project updates.",
+        },
+        {
+          role: "assistant",
+          content:
+            "Got it! I’ll remind the team to bring their updates to the 10 AM meeting tomorrow.",
+        },
+      ],
     },
     {
-      title: "Alice Smith",
-      email: "alicesmith@example.com",
-      subject: "Re: Project Update",
-      date: "Yesterday",
-      teaser:
-        "Thanks for the update. The progress looks great so far.\nLet's schedule a call to discuss the next steps.",
+      id: 2,
+      title: "Project Update Discussion",
+      summary: "Follow-up on project progress and next steps.",
+      time: "Yesterday",
+      messages: [
+        {
+          role: "user",
+          content:
+            "Thanks for the update. The progress looks great so far. Let's schedule a call to discuss the next steps.",
+        },
+        {
+          role: "assistant",
+          content:
+            "Sounds good! I can help outline the next steps before your call with Alice.",
+        },
+      ],
     },
     {
-      title: "Bob Johnson",
-      email: "bobjohnson@example.com",
-      subject: "Weekend Plans",
-      date: "2 days ago",
-      teaser:
-        "Hey everyone! I'm thinking of organizing a team outing this weekend.\nWould you be interested in a hiking trip or a beach day?",
+      id: 3,
+      title: "Weekend Team Outing",
+      summary: "Planning a weekend activity — hiking or beach day?",
+      time: "2 days ago",
+      messages: [
+        {
+          role: "user",
+          content:
+            "Hey everyone! I'm thinking of organizing a team outing this weekend. Would you be interested in a hiking trip or a beach day?",
+        },
+        {
+          role: "assistant",
+          content:
+            "A beach day sounds relaxing! I can help you plan the itinerary if you’d like.",
+        },
+      ],
     },
     {
-      title: "Emily Davis",
-      email: "emilydavis@example.com",
-      subject: "Re: Question about Budget",
-      date: "2 days ago",
-      teaser:
-        "I've reviewed the budget numbers you sent over.\nCan we set up a quick call to discuss some potential adjustments?",
+      id: 4,
+      title: "Budget Adjustment Question",
+      summary: "Discussion about potential budget adjustments.",
+      time: "2 days ago",
+      messages: [
+        {
+          role: "user",
+          content:
+            "I've reviewed the budget numbers you sent over. Can we set up a quick call to discuss some potential adjustments?",
+        },
+        {
+          role: "assistant",
+          content:
+            "Sure! I can help you run through possible budget adjustments before your call.",
+        },
+      ],
     },
     {
-      title: "Michael Wilson",
-      email: "michaelwilson@example.com",
-      subject: "Important Announcement",
-      date: "1 week ago",
-      teaser:
-        "Please join us for an all-hands meeting this Friday at 3 PM.\nWe have some exciting news to share about the company's future.",
+      id: 5,
+      title: "Company Announcement",
+      summary: "All-hands meeting update — big news ahead!",
+      time: "1 week ago",
+      messages: [
+        {
+          role: "user",
+          content:
+            "Please join us for an all-hands meeting this Friday at 3 PM. We have some exciting news to share about the company's future.",
+        },
+        {
+          role: "assistant",
+          content:
+            "Exciting! Want me to draft a quick summary of the announcement for your newsletter?",
+        },
+      ],
     },
   ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  // Note: I'm using state to show active item.
-  // IRL you should use the url/router.
   const [activeItem, setActiveItem] = React.useState(data.navMain[0]);
-  const [mails, setMails] = React.useState(data.chat_history);
+  const [sessions, setSessions] = React.useState(data.chat_sessions);
   const { setOpen } = useSidebar();
   const router = useRouter();
 
@@ -125,21 +156,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       className="overflow-hidden *:data-[sidebar=sidebar]:flex-row"
       {...props}
     >
-      {/* This is the first sidebar */}
-      {/* We disable collapsible and adjust width to icon. */}
-      {/* This will make the sidebar appear as icons. */}
+      {/* Sidebar 1 (Navigation Icons) */}
       <Sidebar
         collapsible="none"
-        className="w-[calc(var(--sidebar-width-icon)+1px)]! border-r"
+        className="w-[calc(var(--sidebar-width-icon)+1px)] border-r"
       >
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
-                tooltip={{
-                  children: "Wave Wave",
-                  hidden: false,
-                }}
+                tooltip={{ children: "Wave Wave", hidden: false }}
                 size="lg"
                 asChild
                 className="md:h-8 md:p-0"
@@ -157,6 +183,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
+
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupContent className="px-1.5 md:px-0">
@@ -164,26 +191,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 {data.navMain.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
-                      tooltip={{
-                        children: item.title,
-                        hidden: false,
-                      }}
+                      tooltip={{ children: item.title, hidden: false }}
                       onClick={() => {
-                        if (item.title == "Chat Wave") {
+                        if (item.title === "Chat Wave") {
                           setActiveItem(item);
-                          const mail = data.chat_history.sort(
+                          const shuffled = [...data.chat_sessions].sort(
                             () => Math.random() - 0.5
                           );
-                          setMails(
-                            mail.slice(
+                          setSessions(
+                            shuffled.slice(
                               0,
                               Math.max(5, Math.floor(Math.random() * 10) + 1)
                             )
                           );
                           setOpen(true);
-                        }
-                        // direct to item.url
-                        else {
+                        } else {
                           router.push(item.url);
                         }
                       }}
@@ -199,19 +221,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+
         <SidebarFooter>
           <NavUser user={data.user} />
         </SidebarFooter>
       </Sidebar>
 
-      {/* This is the second sidebar */}
-      {/* We disable collapsible and let it fill remaining space */}
-      <Sidebar collapsible="none" className="hidden flex-1 md:flex">
+      {/* Sidebar 2 (Chat List) */}
+      <Sidebar collapsible="none" className="hidden flex-1 md:flex gap-0">
         <SidebarHeader className="gap-3.5 border-b p-4">
           <div className="flex w-full items-center justify-between">
-            <div className="text-foreground text-base font-medium">
-              {activeItem?.title}
-            </div>
+            <Button variant="default" size="sm">
+              <PlusCircle /> Tạo chat mới
+            </Button>
+
             <Label className="flex items-center gap-2 text-sm">
               <span>Save</span>
               <Switch className="shadow-none" />
@@ -219,23 +242,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
           <SidebarInput placeholder="Type to search..." />
         </SidebarHeader>
+
         <SidebarContent>
-          <SidebarGroup className="px-0">
+          <SidebarGroup className="px-0 p-0">
             <SidebarGroupContent>
-              {mails.map((mail, index) => (
+              {sessions.map((chat) => (
                 <a
                   href="#"
-                  key={index}
-                  className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex flex-col items-start gap-2 border-b p-4 text-sm leading-tight whitespace-nowrap last:border-b-0"
+                  key={chat.id}
+                  className="flex flex-col gap-1 bg-[#F66868]/5 hover:bg-pink-100 p-3 border-b border-pink-200 transition-colors"
                 >
-                  <div className="flex w-full items-center gap-2">
-                    <span>{mail.title} sdf</span>
-                    <span className="ml-auto text-xs">{mail.date}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-[#C73B3B]">
+                      {chat.title}
+                    </span>
+                    <span className="text-xs text-gray-500">{chat.time}</span>
                   </div>
-                  <span className="font-medium">{mail.subject}</span>
-                  <span className="line-clamp-2 w-[260px] text-xs whitespace-break-spaces">
-                    {mail.teaser}
-                  </span>
+                  <p className="text-xs text-gray-600">{chat.summary}</p>
                 </a>
               ))}
             </SidebarGroupContent>

@@ -47,7 +47,7 @@ export default function Navigation() {
     { name: "Chat Wave", href: "/chat" },
   ];
 
-  if (pathname === "/dashboard") return null;
+  if (pathname.startsWith("/chat")) return null;
 
   return (
     <nav className="fixed top-0 left-0 w-full bg-white/70 backdrop-blur-md z-50">
