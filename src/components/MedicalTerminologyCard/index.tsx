@@ -208,7 +208,7 @@ export default function MedicalTerminologyCard({
         </div>
 
         {/* Decorative Dotted Line */}
-        <div className="absolute right-6 top-24 bottom-24 w-px border-r-2 border-dotted border-[#F66868]"></div>
+        <div className="absolute right-[23px] top-24 bottom-24 w-px border-r-2 border-dotted border-[#F66868]"></div>
         <div className="absolute right-5 top-24 w-2 h-2 bg-[#F66868] rounded-full"></div>
         <div className="absolute right-5 bottom-24 w-2 h-2 bg-[#F66868] rounded-full"></div>
       </div>

@@ -144,17 +144,41 @@ export default function MapPage() {
                   </div>
 
                   {/* Alternating Cards */}
-                  <div className="grid grid-cols-2 gap-8">
+                  <div className="grid grid-cols-2 gap-8 items-center justify-center">
                     {isLeft ? (
                       <>
+                        {/* Left Card */}
                         <div className="pr-8">
                           <MedicalTerminologyCard lesson={lesson} />
                         </div>
-                        <div />
+
+                        {/* Right Image */}
+                        <div className="relative flex w-fit mx-auto justify-center">
+                          <div className="absolute inset-0 bg-green-500 blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300" />
+                          <Image
+                            src="/hulk.svg"
+                            alt="lesson_decoration"
+                            width={140}
+                            height={140}
+                            className="relative z-10 mx-auto animate-float"
+                          />
+                        </div>
                       </>
                     ) : (
                       <>
-                        <div />
+                        {/* Left Image */}
+                        <div className="relative flex w-fit mx-auto justify-center">
+                          <div className="absolute inset-0 bg-[#F66868] blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300" />
+                          <Image
+                            src="/bat.svg"
+                            alt="lesson_decoration"
+                            width={140}
+                            height={140}
+                            className="relative z-10 mx-auto animate-float"
+                          />
+                        </div>
+
+                        {/* Right Card */}
                         <div className="pl-8">
                           <MedicalTerminologyCard lesson={lesson} />
                         </div>
@@ -169,7 +193,7 @@ export default function MapPage() {
       </div>
 
       {/* RIGHT SECTION (30%) - Giới thiệu hệ thống & Tiến độ */}
-      <div className="xl:w-[30%] bg-[#FFF5F5] border border-[#F66868]/20 p-4 h-fit rounded-2xl shadow-sm relative">
+      <div className="xl:w-[35%] bg-[#FFF5F5] border border-[#F66868]/20 p-4 h-fit rounded-2xl shadow-sm relative">
         <div className="absolute -top-10 -right-4">
           <Image
             src="/capybara_book.svg"
