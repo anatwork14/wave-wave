@@ -7,7 +7,7 @@ export default function Footer() {
   const pathname = usePathname();
   if (pathname.startsWith("/chat")) return null;
   return (
-    <footer className="bg-[#C33D3D] bottom-0 text-white py-20 mt-20">
+    <footer className={` bg-[#C33D3D] bottom-0 text-white py-20 mt-20`}>
       <div className="max-w-6xl mx-auto flex flex-col items-center justify-center gap-y-3 px-6">
         {/* Navigation Links */}
         <div className="flex flex-wrap justify-center gap-x-10 text-lg font-medium">

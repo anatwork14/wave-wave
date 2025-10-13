@@ -11,14 +11,16 @@ import { useUserStore } from "@/store/useUserStore";
 type NavLink = {
   name: string;
   href: string;
+  actualLink: string;
 };
 
-function NavigationItem({ name, href }: NavLink) {
+function NavigationItem({ name, href, actualLink }: NavLink) {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const isActive =
+    pathname === href || (pathname.startsWith(href) && href !== "/");
   return (
     <Link
-      href={href}
+      href={actualLink}
       className={`text-sm 2xl:text-lg px-3 py-1 rounded-xl border transition-all duration-500 ease-in-out
         ${
           isActive
@@ -40,11 +42,11 @@ export default function Navigation() {
   const { user } = useUserStore();
 
   const navLinks: NavLink[] = [
-    { name: "Trang chủ", href: "/" },
-    { name: "Học tập", href: "/study" },
-    { name: "Cộng đồng", href: "/community" },
-    { name: "Từ điển", href: "/dictionary" },
-    { name: "Chat Wave", href: "/chat" },
+    { name: "Trang chủ", href: "/", actualLink: "/" },
+    { name: "Học tập", href: "/study", actualLink: "/study/map" },
+    { name: "Cộng đồng", href: "/community", actualLink: "/community" },
+    { name: "Từ điển", href: "/dictionary", actualLink: "/dictionary" },
+    { name: "Chat Wave", href: "/chat", actualLink: "/chat" },
   ];
 
   if (pathname.startsWith("/chat")) return null;
