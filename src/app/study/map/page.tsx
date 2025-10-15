@@ -193,7 +193,7 @@ export default function MapPage() {
       </div>
 
       {/* RIGHT SECTION (30%) - Giới thiệu hệ thống & Tiến độ */}
-      <div className="xl:w-[35%] bg-[#FFF5F5] border border-[#F66868]/20 p-4 h-fit rounded-2xl shadow-sm relative">
+      <div className="xl:w-[33%] bg-[#FFF5F5] border border-[#F66868]/20 p-4 h-fit rounded-2xl shadow-sm relative">
         <div className="absolute -top-10 -right-4">
           <Image
             src="/capybara_book.svg"

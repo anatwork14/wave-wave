@@ -151,7 +151,7 @@ Tôi học được cách lắng nghe bằng mắt, diễn đạt bằng gương
               icon: <BookOpen size={48} />,
               title: "Học tập",
               desc: "Khám phá thế giới ngôn ngữ ký hiệu qua video minh hoạ, trò chơi tương tác và bài luyện cùng AI. Học vui, nhớ lâu và thực hành ngay trên từng cử chỉ! ",
-              link: "/study",
+              link: "/study/map",
             },
             {
               icon: <Globe2 size={48} />,

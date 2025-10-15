@@ -6,6 +6,7 @@ interface DictionaryCardProps {
   tag: string;
   imageUrl: string;
   dictionaryUrl: string;
+  isDictionaryPage?: boolean;
 }
 
 export default function DictionaryCard({
@@ -13,6 +14,7 @@ export default function DictionaryCard({
   tag,
   imageUrl,
   dictionaryUrl,
+  isDictionaryPage = true,
 }: DictionaryCardProps) {
   const [bookmarked, setBookmarked] = useState(false);
 
@@ -58,17 +60,31 @@ export default function DictionaryCard({
       />
 
       {/* Button */}
-      <a
-        href={dictionaryUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-auto flex items-center justify-between bg-[#C73B3B] text-white font-semibold px-4 py-3 rounded-lg hover:bg-red-900 transition"
-      >
-        <div className="flex items-center gap-2 text-lg">
-          <span>Đến Từ điển</span>
-        </div>
-        <ArrowRight className="w-4 h-4" />
-      </a>
+      {isDictionaryPage ? (
+        <a
+          href={dictionaryUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-auto flex items-center justify-between bg-[#C73B3B] text-white font-semibold px-4 py-3 rounded-lg hover:bg-red-900 transition"
+        >
+          <div className="flex items-center gap-2 text-lg">
+            <span>Đến Từ điển</span>
+          </div>
+          <ArrowRight className="w-4 h-4" />
+        </a>
+      ) : (
+        <a
+          href={`/dictionary/${title}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between bg-[#C73B3B] text-white font-semibold px-4 py-3 rounded-lg hover:bg-red-900 transition"
+        >
+          <div className="flex items-center gap-2 text-lg">
+            <span>Tìm từ vựng này</span>
+          </div>
+          <ArrowRight className="w-4 h-4" />
+        </a>
+      )}
     </div>
   );
 }

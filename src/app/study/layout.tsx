@@ -8,7 +8,7 @@ import { ReactNode } from "react";
 const tabs = [
   { name: "Bản đồ học tập", href: "/study/map" },
   { name: "Tiến độ của tôi", href: "/study/me" },
-  { name: "Khu học tập", href: "/study/learn" },
+  { name: "Bắt đầu học", href: "/study/learn" },
 ];
 
 export default function StudyLayout({ children }: { children: ReactNode }) {
