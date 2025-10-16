@@ -137,11 +137,11 @@ export default function VocabularyInfo({
             {videoUrl && (
               <button
                 onClick={() => setMediaMode("video")}
-                className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors
+                className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors cursor-pointer
                   ${
                     mediaMode === "video"
-                      ? "bg-rose-500 text-white"
-                      : "text-rose-500 hover:bg-rose-100"
+                      ? "bg-[#C73B3B]  text-white"
+                      : "text-[#C73B3B] hover:bg-rose-100"
                   }`}
               >
                 <Video className="w-4 h-4" /> Video hướng dẫn
@@ -150,11 +150,11 @@ export default function VocabularyInfo({
             {imageUrl && (
               <button
                 onClick={() => setMediaMode("image")}
-                className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors
+                className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors cursor-pointer
                   ${
                     mediaMode === "image"
-                      ? "bg-rose-500 text-white"
-                      : "text-rose-500 hover:bg-rose-100"
+                      ? "bg-[#C73B3B]  text-white"
+                      : "text-[#C73B3B] hover:bg-rose-100"
                   }`}
               >
                 <ImageIcon className="w-4 h-4" /> Hình ảnh về từ

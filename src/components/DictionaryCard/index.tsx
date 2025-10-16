@@ -31,7 +31,7 @@ export default function DictionaryCard({
       {/* Bookmark icon */}
       <button
         onClick={() => setBookmarked(true)}
-        className={`absolute top-4 right-4 p-1 rounded-lg transition duration-500 cursor-pointer ${
+        className={`absolute top-6 right-4 p-1 rounded-lg transition duration-500 cursor-pointer ${
           bookmarked
             ? "bg-[#C73B3B] text-white"
             : "bg-[#FFE4E4] text-rose-400 hover:text-rose-500"
@@ -43,6 +43,22 @@ export default function DictionaryCard({
           <Bookmark className="w-7 h-7" />
         )}
       </button>
+      <div className="relative z-10 w-fit cursor-pointer">
+        <div
+          className="inline-block rounded-full border border-rose-300/60
+               bg-gradient-to-r from-rose-100 via-rose-50 to-rose-100
+               px-6 py-2
+               backdrop-blur-sm transition-all duration-500 
+               hover:scale-[1.05]"
+        >
+          <span
+            className="text-base font-semibold text-rose-700 tracking-wide 
+                 drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)]"
+          >
+            Từ vựng nổi bật
+          </span>
+        </div>
+      </div>
 
       {/* Title + Tag */}
       <div className="text-left">
