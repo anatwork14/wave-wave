@@ -30,8 +30,8 @@ export default function SearchBar({
   return (
     <div className={`grid w-full gap-4 ${className}`}>
       <InputGroup
-        className="rounded-2xl bg-white border border-[#FF978E]
-               h-12"
+        className="rounded-lg bg-white border-2 border-[#FF978E]
+               h-15"
       >
         <InputGroupAddon align="inline-start">
           <Search className="w-6 h-6 mr-2" />
