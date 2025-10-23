@@ -8,9 +8,15 @@ import {
   Video,
   Image as ImageIcon,
   Sparkles,
+  Camera,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 interface VocabularyInfoProps {
   word: string;
   partOfSpeech?: string;
@@ -38,7 +44,12 @@ export default function VocabularyInfo({
   const [showContext, setShowContext] = useState(false);
   const [context, setContext] = useState<string | null>(contextResult ?? null);
   const [loadingContext, setLoadingContext] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(false);
 
+  const handleCameraAccess = () => {
+    setIsCameraActive((prev) => !prev);
+    // later you can add actual camera access logic
+  };
   // Reset feedback animations
   useEffect(() => {
     if (bookmarked || isShare) {
@@ -85,48 +96,84 @@ export default function VocabularyInfo({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2 text-rose-500">
-          {/* Share */}
-          <button
-            onClick={() => setIsShare(true)}
-            className={`p-2 rounded-lg transition-all duration-300 transform flex items-center justify-center
-              ${
-                isShare
-                  ? "bg-rose-700 text-white scale-105"
-                  : "bg-rose-100 text-rose-500 hover:bg-rose-200 hover:text-rose-600"
-              }`}
-          >
-            {isShare ? (
-              <Check className="w-6 h-6" />
-            ) : (
-              <Share className="w-6 h-6" />
-            )}
-          </button>
+        <TooltipProvider>
+          <div className="flex gap-3 text-rose-500 justify-center items-center">
+            {/* Share */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setIsShare(!isShare)}
+                  className={`p-2 rounded-xl transition-all duration-300 transform flex items-center justify-center shadow-sm
+                ${
+                  isShare
+                    ? "bg-[#f66868] text-white scale-105 shadow-lg"
+                    : "bg-rose-100 text-[#f66868] hover:bg-rose-200 hover:text-rose-600"
+                }`}
+                >
+                  {isShare ? (
+                    <Check className="w-6 h-6" />
+                  ) : (
+                    <Share className="w-6 h-6" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="text-sm font-medium rounded-md">
+                Chia sẻ bài học
+              </TooltipContent>
+            </Tooltip>
 
-          {/* Bookmark */}
-          <button
-            onClick={() => setBookmarked(true)}
-            className={`p-2 rounded-lg transition-all duration-300 transform flex items-center justify-center
-              ${
-                bookmarked
-                  ? "bg-rose-700 text-white scale-105"
-                  : "bg-rose-100 text-rose-500 hover:bg-rose-200 hover:text-rose-600"
-              }`}
-          >
-            {bookmarked ? (
-              <Check className="w-6 h-6" />
-            ) : (
-              <Bookmark className="w-6 h-6" />
-            )}
-          </button>
-        </div>
+            {/* Bookmark */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setBookmarked(!bookmarked)}
+                  className={`p-2 rounded-xl transition-all duration-300 transform flex items-center justify-center shadow-sm
+                ${
+                  bookmarked
+                    ? "bg-[#f66868] text-white scale-105 shadow-lg"
+                    : "bg-rose-100 text-[#f66868] hover:bg-rose-200 hover:text-rose-600"
+                }`}
+                >
+                  {bookmarked ? (
+                    <Check className="w-6 h-6" />
+                  ) : (
+                    <Bookmark className="w-6 h-6" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="text-sm font-medium rounded-md">
+                Lưu vào danh sách
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Camera */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleCameraAccess}
+                  className={`p-2 rounded-xl transition-all duration-300 transform flex items-center justify-center shadow-sm
+                ${
+                  isCameraActive
+                    ? "bg-[#f66868] text-white scale-105 shadow-lg"
+                    : "bg-rose-100 text-[#f66868] hover:bg-rose-200 hover:text-rose-600"
+                }`}
+                >
+                  <Camera className="w-6 h-6" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="text-sm font-medium rounded-md">
+                Mở camera luyện tập
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
       </div>
 
       {/* Definition Section */}
       {definition && (
         <div className="space-y-2 mb-6">
-          <div className="text-sm text-gray-500 uppercase">Cách thực hiện</div>
-          <p className="text-gray-700 leading-relaxed">{definition}</p>
+          <div className="text-lg text-gray-500 uppercase">Cách thực hiện</div>
+          <p className="text-gray-700 text-sm">{definition}</p>
         </div>
       )}
 
@@ -200,7 +247,7 @@ export default function VocabularyInfo({
 
       {/* Context Section */}
       {showContext && (
-        <div className="mt-6 bg-rose-50 border border-rose-200 rounded-lg p-4 text-gray-700">
+        <div className="mt-6 bg-rose-50 border border-rose-200 rounded-lg p-4 text-gray-700 text-base">
           {loadingContext ? (
             <div className="animate-pulse text-gray-400">
               Đang tải ngữ cảnh...

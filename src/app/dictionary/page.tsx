@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import DictionaryCard from "@/components/DictionaryCard";
 import SameTopicSection from "./components/SameTopicSection";
-import VocabularyInfo from "./components/WordHeader";
 import {
   Dialog,
   DialogContent,
@@ -14,37 +13,40 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Grid3x3, List } from "lucide-react";
-import TopicShowcase from "./components/TopicShowcase";
+import Image from "next/image";
+import VocabularyInfo from "@/components/VocabularyInfo";
 
-const synonyms = [
-  { title: "Map", link: true },
-  { title: "Occasion", link: true },
-  { title: "Office", link: true },
-  { title: "Part", link: true },
-  { title: "Procedure", link: true },
-  { title: "Purpose", link: true },
-  { title: "Role", link: true },
-  { title: "Routine", link: true },
-  { title: "Use", link: true },
-  { title: "Part", link: true },
-  { title: "Procedure", link: true },
-  { title: "Purpose", link: true },
-  { title: "Role", link: true },
-  { title: "Routine", link: true },
-  { title: "Use", link: true },
+const synonyms: Vocabulary[] = [
+  { title: "Map", link: "/dictionary" },
+  { title: "Occasion", link: "/dictionary" },
+  { title: "Office", link: "/dictionary" },
+  { title: "Part", link: "/dictionary" },
+  { title: "Procedure", link: "/dictionary" },
+  { title: "Purpose", link: "/dictionary" },
+  { title: "Role", link: "/dictionary" },
+  { title: "Routine", link: "/dictionary" },
+  { title: "Use", link: "/dictionary" },
+  { title: "Part", link: "/dictionary" },
+  { title: "Procedure", link: "/dictionary" },
+  { title: "Purpose", link: "/dictionary" },
+  { title: "Role", link: "/dictionary" },
+  { title: "Routine", link: "/dictionary" },
+  { title: "Use", link: "/dictionary" },
 ];
 
 const currentVocabulary = {
   title: "Trái dừa",
   partOfSpeech: "Danh từ",
+  description: "Mô tả hành động trái dừa",
   videoUrl: "https://qipedc.moet.gov.vn/videos/W02732N.mp4?autoplay=true",
 };
 
 export type Vocabulary = {
   title: string;
   partOfSpeech?: string;
+  description?: string;
   videoUrl?: string;
+  imageUrl?: string;
   link?: string;
 };
 
@@ -70,8 +72,11 @@ export default function DictionaryPage() {
       //   // No results found
 
       // }
-      // const data = { definition: currentVocabulary };
-      const data = null;
+      const data = {
+        definition: currentVocabulary,
+        synonyms: synonyms,
+      };
+      // const data = null;
       if (data && data.definition) {
         setDefinition(data.definition);
         setSameTopicVocab(data.synonyms || []);
@@ -163,33 +168,58 @@ export default function DictionaryPage() {
           />
         </div>
 
-        <div className="max-w-7xl mx-auto mt-10 grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div
+          className={`max-w-7xl mx-auto mt-10 grid grid-cols-1 ${
+            definition && "xl:grid-cols-3"
+          }  gap-6`}
+        >
           {/* LEFT */}
           <div className="lg:col-span-2 space-y-4">
             {definition ? (
               <VocabularyInfo
                 word={currentVocabulary.title}
                 partOfSpeech={currentVocabulary.partOfSpeech}
-                definition="work or operate in a proper or particular way"
+                definition={currentVocabulary.description}
                 videoUrl={currentVocabulary.videoUrl}
                 imageUrl="/logo.svg"
               />
             ) : (
-              <TopicShowcase />
+              <div className="flex flex-col items-center justify-center w-full py-16 text-center">
+                <div className="relative">
+                  <div className="absolute -inset-6 bg-blue-500/10 blur-3xl rounded-full animate-pulse"></div>
+                  <Image
+                    src="/note.svg"
+                    alt="note_hero_section"
+                    height={420}
+                    width={420}
+                    className="relative z-10 opacity-95 hover:scale-105 transition-transform duration-700 ease-out drop-shadow-[0_0_20px_#2563EB]/40"
+                  />
+                </div>
+
+                <p className="mt-10 text-2xl font-semibold text-blue-600 tracking-tight leading-snug">
+                  Hãy nhập để khám phá kho từ vựng <br />
+                  <span className="text-gray-800">hơn 4000 từ của </span>
+                  <span className="font-bold bg-gradient-to-r from-blue-600 to-sky-400 bg-clip-text text-transparent">
+                    Wave Wave
+                  </span>
+                </p>
+              </div>
             )}
           </div>
 
           {/* RIGHT */}
-          <div className="flex flex-col gap-y-3">
-            <DictionaryCard
-              title="Trái Dừa"
-              tag="Danh từ"
-              imageUrl="dictionary/coconut.svg"
-              dictionaryUrl="/dictionary"
-              isDictionaryPage={false}
-            />
-            <SameTopicSection sameTopicWord={sameTopicVocab} />
-          </div>
+          {definition && (
+            <div className="flex flex-col gap-y-3">
+              <DictionaryCard
+                title="Trái Dừa"
+                tag="Danh từ"
+                imageUrl="dictionary/coconut.svg"
+                dictionaryUrl="/dictionary"
+                isDictionaryPage={false}
+              />
+              <SameTopicSection sameTopicWord={sameTopicVocab} />
+            </div>
+          )}
         </div>
       </div>
     </div>

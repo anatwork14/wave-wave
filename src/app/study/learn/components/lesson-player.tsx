@@ -19,16 +19,8 @@ import {
   ChevronRight,
   ChevronLeft,
 } from "lucide-react";
-import VocabularyInfo from "./VocabularyInfo";
-
-interface Vocabulary {
-  id: number;
-  word: string;
-  description: string;
-  videoUrl: string;
-  imageUrl: string;
-  explanation: string;
-}
+import { Vocabulary } from "@/app/dictionary/page";
+import VocabularyInfo from "@/components/VocabularyInfo";
 
 interface Question {
   id: number;
@@ -43,45 +35,39 @@ interface Question {
 
 const vocabularyList: Vocabulary[] = [
   {
-    id: 1,
-    word: "Trái Dừa",
-    description: "Kí hiệu cho trái dừa",
-    videoUrl: "/sign-language-letter-a.jpg",
-    imageUrl: "/sign-language-letter-a.jpg",
-    explanation:
-      "Nắm tay thành nắm đấm với ngón cái ngoài cùng, sau đó xoay tay.",
+    title: "Trái Dừa",
+    videoUrl: "https://www.youtube.com/watch?v=JZjjnSTYbRc", // Handspeak coconut video
+    imageUrl: "https://www.lifeprint.com/asl101/gifs/c/coconut.gif", // Lifeprint coconut gif
+    description:
+      "Nắm hai bàn tay thành nắm, đặt cách nhau khoảng không, rồi xoay nhẹ để mô phỏng cùi dừa lật — giống động tác lắc dừa.",
   },
   {
-    id: 2,
-    word: "Chuối",
-    description: "Kí hiệu cho chuối",
-    videoUrl: "/sign-language-letter-b.jpg",
-    imageUrl: "/sign-language-letter-b.jpg",
-    explanation: "Mở rộng tất cả các ngón tay với lòng bàn tay hướng ra ngoài.",
+    title: "Chuối",
+    videoUrl: "https://www.youtube.com/watch?v=JLd8dRl4_3o", // Signing Savvy banana video
+    imageUrl: "https://www.signingsavvy.com/media_sign/banana/2237.png", // Signing Savvy banana image
+    description:
+      "Duỗi ngón trỏ, sau đó dùng bàn tay kia 'lột' ngón trỏ như đang bóc vỏ chuối — động tác 'peel' chuối.",
   },
   {
-    id: 3,
-    word: "Cam",
-    description: "Kí hiệu cho cam",
-    videoUrl: "/sign-language-letter-c.jpg",
-    imageUrl: "/sign-language-letter-c.jpg",
-    explanation: "Uốn cong tất cả các ngón tay như hình chữ C.",
+    title: "Cam",
+    videoUrl: "https://www.youtube.com/watch?v=5E5i2XH1eX8", // ASL Meredith orange video
+    imageUrl: "https://aslmeredith.com/images/posts/orange_sign.png", // ASL Meredith orange image
+    description:
+      "Đặt bàn tay lên má, sau đó xoay nhẹ như đang vắt cam — biểu tượng cho việc vắt nước cam.",
   },
   {
-    id: 4,
-    word: "Dâu Tây",
-    description: "Kí hiệu cho dâu tây",
-    videoUrl: "/sign-language-letter-a.jpg",
-    imageUrl: "/sign-language-letter-a.jpg",
-    explanation: "Chỉ ngón trỏ và ngón giữa lên trên, các ngón khác gập xuống.",
+    title: "Dâu Tây",
+    videoUrl: "https://www.youtube.com/watch?v=5E5i2XH1eX8", // ASL Meredith strawberry video
+    imageUrl: "https://aslmeredith.com/images/posts/strawberry_sign.png", // ASL Meredith strawberry image
+    description:
+      "Đặt đầu ngón trỏ và giữa lên môi, sau đó xoay nhẹ — biểu tượng như đang 've vẩy' dâu tây.",
   },
   {
-    id: 5,
-    word: "Nho",
-    description: "Kí hiệu cho nho",
-    videoUrl: "/sign-language-letter-b.jpg",
-    imageUrl: "/sign-language-letter-b.jpg",
-    explanation: "Nắm tay lại và di chuyển từ trên xuống dưới.",
+    title: "Nho",
+    videoUrl: "https://www.youtube.com/watch?v=9b9ZxIeB2_c", // Grapes ASL video
+    imageUrl: "https://www.signingsavvy.com/media_sign/grape/2245.png", // Signing Savvy grapes image
+    description:
+      "Nắm nhẹ các ngón tay lại rồi chuyển động giống như đang nắm chùm nho nhỏ — mô phỏng việc hái nho.",
   },
 ];
 
@@ -248,56 +234,74 @@ export default function LessonPlayer() {
           className="h-2 bg-rose-100 [&>div]:bg-[#f66868]"
         />
       </div>
+      <div className="w-full flex justify-center">
+        <div className="mt-1 w-fit rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 p-4 text-center shadow-sm flex flex-row gap-x-4 items-center">
+          <div className="text-xl">💡</div>
+          <div className="flex flex-col gap-y-1">
+            <p className="text-rose-700 font-medium text-lg">
+              Mẹo nhỏ: Hãy bật camera để tự kiểm tra bản thân nhé!
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* === PHASE: INTRODUCTION === */}
-      {phase === "introduction" && <VocabularyInfo />}
+      {phase === "introduction" && (
+        <VocabularyInfo
+          word={currentVocab.title}
+          partOfSpeech={currentVocab.partOfSpeech}
+          definition={currentVocab.description}
+          videoUrl={currentVocab.videoUrl}
+          imageUrl={currentVocab.imageUrl}
+        />
+      )}
 
       {/* === PHASE: QUIZ === */}
       {phase === "quiz" && (
-        <Card className="overflow-hidden border border-rose-200 shadow-md hover:shadow-lg transition-all">
-          <CardHeader className="bg-gradient-to-r from-rose-50 to-rose-100 border-b border-rose-200">
+        <Card className="overflow-hidden border-2 shadow-sm hover:shadow-md transition-all scale-[0.98]">
+          <CardHeader className="border-b-2 py-2 px-4">
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-2xl font-bold text-foreground">
+                <CardTitle className="text-lg font-semibold text-foreground">
                   Kí Hiệu Này Là Gì?
                 </CardTitle>
-                <CardDescription className="text-sm mt-1">
+                <CardDescription className="text-xs mt-0.5">
                   Xem video và chọn đáp án đúng
                 </CardDescription>
               </div>
-              <Badge className="bg-[#f66868]/10 text-[#f66868] border border-[#f66868]/30">
+              <Badge className="bg-[#f66868]/10 text-[#f66868] border border-[#f66868]/30 text-[11px] py-0.5 px-2">
                 Kiểm Tra
               </Badge>
             </div>
           </CardHeader>
 
-          <CardContent className="pt-6 space-y-6">
+          <CardContent className="pt-4 space-y-4 px-4 pb-4">
             {/* VIDEO */}
-            <div className="relative rounded-xl overflow-hidden aspect-video bg-rose-50 shadow-inner">
+            <div className="relative rounded-lg overflow-hidden aspect-video bg-rose-50 shadow-inner">
               <img
                 src={currentQuestion.videoUrl}
                 alt="Câu hỏi"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                <button className="w-16 h-16 rounded-full flex items-center justify-center bg-[#f66868] hover:bg-[#f66868]/90 transition">
-                  <Volume2 className="text-white w-8 h-8" />
+                <button className="w-12 h-12 rounded-full flex items-center justify-center bg-[#f66868] hover:bg-[#f66868]/90 transition">
+                  <Volume2 className="text-white w-6 h-6" />
                 </button>
               </div>
             </div>
 
             {/* OPTIONS */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {currentQuestion.options.map((option, index) => (
                 <button
                   key={option.id}
                   onClick={() => handleQuizAnswer(index)}
                   disabled={showQuizResult}
-                  className={`group rounded-xl overflow-hidden border transition-all duration-300 ${
+                  className={`group rounded-lg overflow-hidden border transition-all duration-300 ${
                     selectedAnswer === index
                       ? isQuizCorrect
-                        ? "border-green-500 ring-2 ring-green-300"
-                        : "border-red-500 ring-2 ring-red-300"
+                        ? "border-green-500 ring-1 ring-green-300"
+                        : "border-red-500 ring-1 ring-red-300"
                       : "hover:border-[#f66868]/70"
                   }`}
                 >
@@ -314,14 +318,14 @@ export default function LessonPlayer() {
                         }`}
                       >
                         {isQuizCorrect ? (
-                          <CheckCircle2 className="w-10 h-10 text-green-600" />
+                          <CheckCircle2 className="w-8 h-8 text-green-600" />
                         ) : (
-                          <XCircle className="w-10 h-10 text-red-600" />
+                          <XCircle className="w-8 h-8 text-red-600" />
                         )}
                       </div>
                     )}
                   </div>
-                  <div className="p-2 bg-white border-t text-sm font-medium text-center">
+                  <div className="p-1.5 bg-white border-t text-xs font-medium text-center">
                     {option.label}
                   </div>
                 </button>
@@ -331,16 +335,16 @@ export default function LessonPlayer() {
             {/* RESULT */}
             {showQuizResult && (
               <div
-                className={`p-4 rounded-lg border ${
+                className={`p-3 rounded-md border text-sm ${
                   isQuizCorrect
                     ? "bg-green-50 border-green-200 text-green-800"
                     : "bg-red-50 border-red-200 text-red-800"
                 }`}
               >
-                <p className="font-semibold mb-1">
+                <p className="font-semibold mb-0.5">
                   {isQuizCorrect ? "Tuyệt vời!" : "Chưa đúng"}
                 </p>
-                <p className="text-sm">
+                <p className="text-xs leading-snug">
                   {isQuizCorrect
                     ? `Đúng rồi! Đây là kí hiệu cho "${
                         currentQuestion.options[currentQuestion.correctAnswer]

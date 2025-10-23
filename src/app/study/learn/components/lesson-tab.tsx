@@ -125,7 +125,6 @@ export default function LessonTab() {
           <h2 className="text-3xl font-bold text-[#f66868] mb-2">Bài Học</h2>
           <p className="text-[#f66868]">Học bài theo cách lộ trình của bạn</p>
         </div>
-
         <div className="grid gap-5 md:grid-cols-2">
           {lessons.map((lesson) => (
             <Card
