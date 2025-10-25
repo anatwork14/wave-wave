@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Camera, Upload, SendHorizonal, HelpCircle } from "lucide-react";
 
@@ -35,13 +35,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DropdownMenuLabel } from "@radix-ui/react-dropdown-menu";
-import { useChatStore } from "@/store/useChatStore";
+import { Message, useChatStore } from "@/store/useChatStore";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { useUserStore } from "@/store/useUserStore";
+import ChatArea from "./chatArea";
 
 type ChatMode = "Auto" | "Conversation" | "Syllabus" | "Quiz";
 
@@ -53,17 +54,128 @@ export default function Page() {
   const [mode, setMode] = useState<ChatMode>("Auto");
   const [tokenUsage, setTokenUsage] = useState(0);
   const chatModes: ChatMode[] = ["Auto", "Conversation", "Syllabus", "Quiz"];
+  const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // This is the correct frontend call to match the backend fix
+  const {
+    currentChat,
+    setCurrentChat,
+    addMessage,
+    setChatSessions,
+    chatSessions,
+  } = useChatStore();
+  const { user } = useUserStore();
 
-  const { currentChat, setCurrentChat } = useChatStore();
+  // This function is correct as-is
+  async function fetchSessionEvents(
+    user_id: string,
+    session_id: string | undefined
+  ) {
+    if (!session_id) return [];
+    const res = await fetch(
+      `http://127.0.0.1:8000/api/sessions/${user_id}/${session_id}`
+    );
 
-  // --- Handlers ---
-  const handleSend = () => {
+    if (!res.ok) {
+      console.error(
+        "Failed to fetch session events:",
+        res.status,
+        res.statusText
+      );
+      return [];
+    }
+
+    const json = await res.json();
+    return json.events || [];
+  }
+
+  const handleSend = async () => {
     if (!input.trim()) return;
-    console.log("Sending:", input, "Mode:", mode);
-    setTokenUsage((prev) => prev + Math.ceil(input.length / 4));
-    setInput("");
+
+    const userMessage: Message = { role: "user", content: input };
+    const messageToSend = input;
+
+    // Optimistically update UI with user message
+    if (currentChat) {
+      addMessage(currentChat.id, userMessage);
+    }
+
+    setInput(""); // Clear input immediately
+    setTokenUsage((prev) => prev + Math.ceil(messageToSend.length / 4));
+
+    // Determine session ID for the backend call
+    const sessionId = currentChat?.id || null;
+    const isNewChat = !currentChat;
+
+    try {
+      // 1. Send request to the FastAPI chat endpoint
+      const response = await fetch("http://127.0.0.1:8000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: "1",
+          message: messageToSend,
+          session_id: sessionId,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Agent response failed.");
+
+      const data = await response.json(); // { user_id, session_id, response }
+
+      const agentMessage: Message = {
+        role: "assistant",
+        content: data.response.trim(),
+      };
+
+      // 2. Update store state
+      if (isNewChat) {
+        // Need to fetch the full session info to populate actor/title
+        // For simplicity, we create a placeholder session immediately
+        const newSessionData = {
+          id: data.session_id,
+          title: messageToSend.substring(0, 30) + "...", // Temp title
+          actor: "teacher_agent",
+          time: new Date().toISOString(),
+          messages: [userMessage, agentMessage], // Include both messages
+        };
+        setChatSessions([...chatSessions, newSessionData]);
+        setCurrentChat(newSessionData);
+      } else {
+        addMessage(data.session_id, agentMessage);
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      // Revert optimistic update or add error message
+      if (!isNewChat && currentChat) {
+        addMessage(currentChat.id, {
+          role: "assistant",
+          content: "Lỗi: Không thể kết nối với Agent.",
+        });
+      }
+    }
   };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // 🎯 FIX: Pass currentChat?.id directly.
+        // This will be either the string ID or 'undefined',
+        // which fetchSessionEvents handles correctly.
+        if (!currentChat) return;
+        const events = await fetchSessionEvents("1", String(currentChat?.id));
+
+        events.forEach((message: Message) => {
+          // You MUST pass the ID of the chat you are adding the message to,
+          // unless your addMessage only takes the message object and updates
+          // the currentChat. Based on your store, you need the ID.
+          addMessage(currentChat.id, message);
+        });
+      } catch (err) {
+        console.error("Failed to fetch sessions:", err);
+      }
+    })();
+  }, [currentChat]);
 
   const handleModeSelect = (selected: ChatMode) => setMode(selected);
 
@@ -141,10 +253,12 @@ export default function Page() {
           </div>
         </header>
 
-        {/* Chat Input Section */}
+        {/* Chat Hero Section */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="flex-1 overflow-y-auto p-4 flex items-center justify-center h-full">
-            {!currentChat && (
+            {currentChat ? (
+              <ChatArea messages={currentChat.messages} />
+            ) : (
               <div className="flex flex-col items-center">
                 <Image
                   src="/capybara.svg"
@@ -169,7 +283,7 @@ export default function Page() {
         </div>
 
         {/* Chat Input Section */}
-        <div className="sticky bottom-0 left-0 right-0 p-4">
+        <div className="sticky bottom-0 left-0 right-0 p-4 z-50">
           <div className="max-w-3xl w-full mx-auto mb-[20px]">
             <InputGroup>
               <InputGroupTextarea

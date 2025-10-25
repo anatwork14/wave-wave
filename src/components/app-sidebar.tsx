@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   BookOpen,
-  Command,
   Database,
   Globe2,
   Home,
@@ -12,7 +11,6 @@ import {
 } from "lucide-react";
 
 import { NavUser } from "@/components/nav-user";
-import { Label } from "@/components/ui/label";
 import {
   Sidebar,
   SidebarContent,
@@ -26,12 +24,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Button } from "./ui/button";
+import { useChatStore } from "@/store/useChatStore";
+import { formatActor, formatTime } from "@/lib/utils";
 
-// ✅ Sample data
+// ✅ Demo data
 const data = {
   user: {
     name: "shadcn",
@@ -50,105 +49,45 @@ const data = {
       isActive: false,
     },
   ],
-  chat_sessions: [
-    {
-      id: 1,
-      title: "Meeting Tomorrow",
-      summary: `Reminder about tomorrow’s meeting at 10 AM`,
-      time: "09:34 AM",
-      messages: [
-        {
-          role: "user",
-          content:
-            "Hi team, just a reminder about our meeting tomorrow at 10 AM. Please come prepared with your project updates.",
-        },
-        {
-          role: "assistant",
-          content:
-            "Got it! I’ll remind the team to bring their updates to the 10 AM meeting tomorrow.",
-        },
-      ],
-    },
-    {
-      id: 2,
-      title: "Project Update Discussion",
-      summary: "Follow-up on project progress and next steps.",
-      time: "Yesterday",
-      messages: [
-        {
-          role: "user",
-          content:
-            "Thanks for the update. The progress looks great so far. Let's schedule a call to discuss the next steps.",
-        },
-        {
-          role: "assistant",
-          content:
-            "Sounds good! I can help outline the next steps before your call with Alice.",
-        },
-      ],
-    },
-    {
-      id: 3,
-      title: "Weekend Team Outing",
-      summary: "Planning a weekend activity — hiking or beach day?",
-      time: "2 days ago",
-      messages: [
-        {
-          role: "user",
-          content:
-            "Hey everyone! I'm thinking of organizing a team outing this weekend. Would you be interested in a hiking trip or a beach day?",
-        },
-        {
-          role: "assistant",
-          content:
-            "A beach day sounds relaxing! I can help you plan the itinerary if you’d like.",
-        },
-      ],
-    },
-    {
-      id: 4,
-      title: "Budget Adjustment Question",
-      summary: "Discussion about potential budget adjustments.",
-      time: "2 days ago",
-      messages: [
-        {
-          role: "user",
-          content:
-            "I've reviewed the budget numbers you sent over. Can we set up a quick call to discuss some potential adjustments?",
-        },
-        {
-          role: "assistant",
-          content:
-            "Sure! I can help you run through possible budget adjustments before your call.",
-        },
-      ],
-    },
-    {
-      id: 5,
-      title: "Company Announcement",
-      summary: "All-hands meeting update — big news ahead!",
-      time: "1 week ago",
-      messages: [
-        {
-          role: "user",
-          content:
-            "Please join us for an all-hands meeting this Friday at 3 PM. We have some exciting news to share about the company's future.",
-        },
-        {
-          role: "assistant",
-          content:
-            "Exciting! Want me to draft a quick summary of the announcement for your newsletter?",
-        },
-      ],
-    },
-  ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [activeItem, setActiveItem] = React.useState(data.navMain[0]);
-  const [sessions, setSessions] = React.useState(data.chat_sessions);
+  const { chatSessions, setChatSessions, currentChat, setCurrentChat } =
+    useChatStore();
+  const [searchQuery, setSearchQuery] = React.useState("");
   const { setOpen } = useSidebar();
   const router = useRouter();
+
+  // -------------------------------
+  // 🔹 Fetch sessions
+  // -------------------------------
+  async function fetchUserSessions(userId: string) {
+    const res = await fetch(`http://127.0.0.1:8000/api/sessions/${userId}`);
+    const json = await res.json();
+    return json.sessions || [];
+  }
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const sessions = await fetchUserSessions("1");
+        setChatSessions(sessions);
+      } catch (err) {
+        console.error("Failed to fetch sessions:", err);
+        setChatSessions([]);
+      }
+    })();
+  }, [setChatSessions]);
+
+  // -------------------------------
+  // 🔹 Search filter (case-insensitive)
+  // -------------------------------
+  const filteredSessions = React.useMemo(() => {
+    if (!searchQuery.trim()) return chatSessions;
+    const lower = searchQuery.toLowerCase();
+    return chatSessions.filter((s) => s.title.toLowerCase().includes(lower));
+  }, [chatSessions, searchQuery]);
 
   return (
     <Sidebar
@@ -156,7 +95,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       className="overflow-hidden *:data-[sidebar=sidebar]:flex-row"
       {...props}
     >
-      {/* Sidebar 1 (Navigation Icons) */}
+      {/* ------------------------------------
+          Sidebar 1 — Navigation Icons
+      ------------------------------------ */}
       <Sidebar
         collapsible="none"
         className="w-[calc(var(--sidebar-width-icon)+1px)] border-r"
@@ -171,7 +112,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 className="md:h-8 md:p-0"
               >
                 <a href="/">
-                  <div className="bg-[#F66868]/20 text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <div className="bg-[#F66868]/20 flex size-8 items-center justify-center rounded-lg">
                     <Image src={"logo.svg"} alt="logo" width={24} height={24} />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
@@ -195,15 +136,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       onClick={() => {
                         if (item.title === "Chat Wave") {
                           setActiveItem(item);
-                          const shuffled = [...data.chat_sessions].sort(
-                            () => Math.random() - 0.5
-                          );
-                          setSessions(
-                            shuffled.slice(
-                              0,
-                              Math.max(5, Math.floor(Math.random() * 10) + 1)
-                            )
-                          );
                           setOpen(true);
                         } else {
                           router.push(item.url);
@@ -227,40 +159,62 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarFooter>
       </Sidebar>
 
-      {/* Sidebar 2 (Chat List) */}
+      {/* ------------------------------------
+          Sidebar 2 — Chat Sessions
+      ------------------------------------ */}
       <Sidebar collapsible="none" className="hidden flex-1 md:flex gap-0">
         <SidebarHeader className="gap-3.5 border-b p-4">
           <div className="flex w-full items-center justify-between">
-            <Button variant="default" size="sm">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setCurrentChat(null)}
+            >
               <PlusCircle /> Tạo chat mới
             </Button>
-
-            <Label className="flex items-center gap-2 text-sm">
-              <span>Save</span>
-              <Switch className="shadow-none" />
-            </Label>
           </div>
-          <SidebarInput placeholder="Type to search..." />
+          {/* Search box */}
+          <SidebarInput
+            placeholder="Tìm kiếm cuộc trò chuyện..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="mt-1"
+          />
         </SidebarHeader>
 
         <SidebarContent>
+          {/* 🔹 Scrollable session list */}
           <SidebarGroup className="px-0 p-0">
-            <SidebarGroupContent>
-              {sessions.map((chat) => (
-                <a
-                  href="#"
-                  key={chat.id}
-                  className="flex flex-col gap-1 bg-[#F66868]/5 hover:bg-pink-100 p-3 border-b border-pink-200 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-[#C73B3B]">
-                      {chat.title}
-                    </span>
-                    <span className="text-xs text-gray-500">{chat.time}</span>
+            <SidebarGroupContent className="max-h-[calc(100vh-200px)] overflow-y-auto scrollbar-thin scrollbar-thumb-pink-300 scrollbar-track-transparent">
+              {filteredSessions.length === 0 ? (
+                <div className="p-4 text-sm text-gray-500 text-center">
+                  Không có kết quả
+                </div>
+              ) : (
+                filteredSessions.map((chat) => (
+                  <div
+                    key={chat.id}
+                    className={`flex flex-col gap-1 bg-[#F66868]/5 hover:bg-pink-100 p-3 border-b border-pink-200 transition-colors cursor-pointer ${
+                      chat == currentChat && "bg-[#f66868]/40"
+                    } `}
+                    onClick={() => setCurrentChat(chat)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-[#C73B3B]">
+                        {chat.title.length > 30
+                          ? `${chat.title.slice(0, 26)}...`
+                          : chat.title}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {formatTime(chat.time)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 line-clamp-1">
+                      {formatActor(chat.actor)}
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-600">{chat.summary}</p>
-                </a>
-              ))}
+                ))
+              )}
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>

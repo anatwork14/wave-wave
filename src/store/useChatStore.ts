@@ -1,7 +1,7 @@
 // store/chatStore.ts
 import { create } from "zustand";
 
-interface Message {
+export interface Message {
   role: "user" | "assistant";
   content: string;
 }
@@ -9,16 +9,16 @@ interface Message {
 interface ChatSession {
   id: number;
   title: string;
-  summary: string;
+  actor: string;
   time: string;
   messages: Message[];
 }
 
 interface ChatState {
   chatSessions: ChatSession[];
-  currentChat?: ChatSession;
+  currentChat?: ChatSession | null;
   setChatSessions: (sessions: ChatSession[]) => void;
-  setCurrentChat: (chat: ChatSession) => void;
+  setCurrentChat: (chat: ChatSession | null) => void;
   addMessage: (chatId: number, message: Message) => void;
 }
 
@@ -31,8 +31,13 @@ export const useChatStore = create<ChatState>((set) => ({
     set((state) => ({
       chatSessions: state.chatSessions.map((chat) =>
         chat.id === chatId
-          ? { ...chat, messages: [...chat.messages, message] }
+          ? {
+              ...chat,
+              // 🎯 FIX: Use the OR operator (||) to ensure messages is an array
+              messages: [...(chat.messages || []), message],
+            }
           : chat
       ),
+      // ... (logic to update currentChat if applicable, as in previous versions)
     })),
 }));
