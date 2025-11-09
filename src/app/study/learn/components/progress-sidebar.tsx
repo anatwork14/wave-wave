@@ -4,99 +4,51 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Lock, Circle, SquarePen } from "lucide-react";
 
+type LessonStatus = "complete" | "in-progress" | "not_start";
+
 interface Lesson {
   id: number;
   title: string;
-  vocabularyCount: number;
-  status: "completed" | "in-progress" | "locked";
-  progress: number;
+  description: string;
+  vocabulary_count: number;
+  lesson_status: LessonStatus;
+  level: "Cơ bản";
 }
 
-const lessons: Lesson[] = [
-  {
-    id: 1,
-    title: "Bảng Chữ Cái A-F",
-    vocabularyCount: 4,
-    status: "completed",
-    progress: 100,
-  },
-  {
-    id: 2,
-    title: "Bảng Chữ Cái G-L",
-    vocabularyCount: 4,
-    status: "completed",
-    progress: 100,
-  },
-  {
-    id: 3,
-    title: "Bảng Chữ Cái M-R",
-    vocabularyCount: 4,
-    status: "in-progress",
-    progress: 65,
-  },
-  {
-    id: 4,
-    title: "Bảng Chữ Cái S-Z",
-    vocabularyCount: 4,
-    status: "locked",
-    progress: 0,
-  },
-  {
-    id: 5,
-    title: "Số Từ 0-5",
-    vocabularyCount: 4,
-    status: "locked",
-    progress: 0,
-  },
-  {
-    id: 6,
-    title: "Số Từ 6-10",
-    vocabularyCount: 4,
-    status: "locked",
-    progress: 0,
-  },
-  {
-    id: 7,
-    title: "Lời Chào Cơ Bản",
-    vocabularyCount: 4,
-    status: "locked",
-    progress: 0,
-  },
-  {
-    id: 8,
-    title: "Cảm Xúc",
-    vocabularyCount: 4,
-    status: "locked",
-    progress: 0,
-  },
-  {
-    id: 9,
-    title: "Gia Đình",
-    vocabularyCount: 4,
-    status: "locked",
-    progress: 0,
-  },
-  {
-    id: 10,
-    title: "Hoạt Động Hàng Ngày",
-    vocabularyCount: 4,
-    status: "locked",
-    progress: 0,
-  },
-];
+// 2. DELETE the hardcoded 'lessons' array.
+// const lessons: Lesson[] = [ ... ]; // <-- DELETE THIS
 
+// 3. UPDATE the props to accept the 'lessons' array
 interface ProgressSidebarProps {
+  lessons: Lesson[]; // <-- ADD THIS
+  syllabusId: string;
   selectedLessonId?: number;
   onSelectLesson?: (id: number) => void;
 }
 
 export default function ProgressSidebar({
+  lessons, // <-- 4. ACCEPT the 'lessons' prop
+  syllabusId,
   selectedLessonId,
   onSelectLesson,
 }: ProgressSidebarProps) {
-  const completedCount = lessons.filter((l) => l.status === "completed").length;
-  const totalVocabulary = lessons.length * 4;
+  // 5. CALCULATE progress dynamically from the 'lessons' prop
+  const totalLessons = lessons.length;
+  const completedCount = lessons.filter(
+    (l) => l.lesson_status === "complete"
+  ).length;
+  console.log(lessons);
+  // More accurate vocabulary calculation
+  const totalVocabulary = lessons.reduce(
+    (acc, lesson) => acc + (lesson.vocabulary_count || 0),
+    0
+  );
 
+  const vocabularyComplete = lessons.reduce(
+    (acc, lesson) =>
+      acc + (lesson.lesson_status === "complete" ? lesson.vocabulary_count : 0),
+    0
+  );
   return (
     <div className="space-y-4">
       {/* Progress Overview Card */}
@@ -105,16 +57,18 @@ export default function ProgressSidebar({
           <CardTitle className="text-lg font-semibold text-[#F66868] tracking-wide">
             Giáo trình của bạn
           </CardTitle>
-          <Button>
-            <SquarePen />
-            Điều chỉnh
-          </Button>
+          {Number(syllabusId) > 11 && (
+            <Button>
+              <SquarePen />
+              Điều chỉnh
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-500">Bài Hoàn Thành</span>
             <span className="font-semibold text-[#F66868]">
-              {completedCount}/10
+              {completedCount}/{totalLessons}
             </span>
           </div>
 
@@ -122,14 +76,14 @@ export default function ProgressSidebar({
           <div className="h-2 bg-rose-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-[#F66868] transition-all duration-500"
-              style={{ width: `${(completedCount / 10) * 100}%` }}
+              style={{ width: `${(completedCount / totalLessons) * 100}%` }}
             />
           </div>
 
           <div className="flex items-center justify-between text-sm pt-2">
             <span className="text-gray-500">Từ Vựng Học</span>
             <span className="font-semibold text-[#F66868]">
-              {completedCount * 4}/{totalVocabulary}
+              {vocabularyComplete}/{totalVocabulary}
             </span>
           </div>
         </CardContent>
@@ -140,9 +94,7 @@ export default function ProgressSidebar({
         {lessons.map((lesson) => (
           <div
             key={lesson.id}
-            onClick={() =>
-              lesson.status !== "locked" && onSelectLesson?.(lesson.id)
-            }
+            onClick={() => onSelectLesson?.(lesson.id)}
             className={`p-3 rounded-xl border text-sm transition-all cursor-pointer backdrop-blur-sm
               ${
                 selectedLessonId === lesson.id
@@ -150,41 +102,29 @@ export default function ProgressSidebar({
                   : "border-rose-100 hover:border-[#F66868]/50 hover:bg-rose-50/60"
               }
               ${
-                lesson.status === "locked"
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
+                lesson.lesson_status == "complete" &&
+                "border-green-200 hover:border-green-300 hover:bg-green-400"
               }
             `}
           >
-            <div className="flex items-start gap-3">
+            <div className="flex gap-3 items-center">
               <div className="flex-shrink-0 mt-0.5">
-                {lesson.status === "completed" && (
-                  <CheckCircle2 className="h-5 w-5 text-[#F66868]" />
+                {lesson.lesson_status === "complete" && (
+                  <CheckCircle2 className="h-5 w-5 text-green-500 items-center" />
                 )}
-                {lesson.status === "in-progress" && (
+                {lesson.lesson_status === "in-progress" && (
                   <Circle className="h-5 w-5 text-[#F66868] fill-[#F66868]/40 animate-pulse" />
                 )}
-                {lesson.status === "locked" && (
-                  <Lock className="h-5 w-5 text-gray-400" />
-                )}
               </div>
-
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {lesson.title}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {lesson.vocabularyCount} từ vựng
-                </p>
-
-                {lesson.status === "in-progress" && (
-                  <div className="mt-2 h-1.5 bg-rose-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#F66868] transition-all duration-500"
-                      style={{ width: `${lesson.progress}%` }}
-                    />
-                  </div>
-                )}
+              <div className="flex w-full flex-row justify-between items-center">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {lesson.title}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {lesson.vocabulary_count} từ vựng
+                  </p>
+                </div>
               </div>
             </div>
           </div>

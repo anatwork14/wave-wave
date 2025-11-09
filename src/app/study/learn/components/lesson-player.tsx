@@ -1,6 +1,7 @@
 "use client";
-
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+// 1. Import useEffect, useCallback và additional icons
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -18,144 +19,216 @@ import {
   RotateCcw,
   ChevronRight,
   ChevronLeft,
+  Loader2,
+  School,
+  Trophy, // Thêm icon cho màn hình kết quả
 } from "lucide-react";
-import { Vocabulary } from "@/app/dictionary/page";
 import VocabularyInfo from "@/components/VocabularyInfo";
+import { useUserStore } from "@/store/useUserStore";
+
+// (Các interface Vocabulary, BackendVocabularyItem, Lesson không đổi)
+interface Vocabulary {
+  title: string;
+  description: string;
+  videoUrl: string;
+  imageUrl?: string | null;
+  partOfSpeech?: string;
+}
+
+interface BackendVocabularyItem {
+  id: number;
+  word: string;
+  description: string;
+  video_url: string;
+}
 
 interface Question {
   id: number;
-  videoUrl: string;
-  correctAnswer: number;
+  question_text: string;
+  video: string;
+  type: "mcq" | "true_false";
   options: {
     id: number;
-    imageUrl: string;
-    label: string;
+    option_text: string;
+    is_correct: boolean;
   }[];
 }
+interface LessonQuizResponse {
+  quiz_id: number | null;
+  questions: Question[];
+}
+interface Lesson {
+  id: number;
+  title: string;
+}
 
-const vocabularyList: Vocabulary[] = [
-  {
-    title: "Trái Dừa",
-    videoUrl: "https://www.youtube.com/watch?v=JZjjnSTYbRc", // Handspeak coconut video
-    imageUrl: "https://www.lifeprint.com/asl101/gifs/c/coconut.gif", // Lifeprint coconut gif
-    description:
-      "Nắm hai bàn tay thành nắm, đặt cách nhau khoảng không, rồi xoay nhẹ để mô phỏng cùi dừa lật — giống động tác lắc dừa.",
-  },
-  {
-    title: "Chuối",
-    videoUrl: "https://www.youtube.com/watch?v=JLd8dRl4_3o", // Signing Savvy banana video
-    imageUrl: "https://www.signingsavvy.com/media_sign/banana/2237.png", // Signing Savvy banana image
-    description:
-      "Duỗi ngón trỏ, sau đó dùng bàn tay kia 'lột' ngón trỏ như đang bóc vỏ chuối — động tác 'peel' chuối.",
-  },
-  {
-    title: "Cam",
-    videoUrl: "https://www.youtube.com/watch?v=5E5i2XH1eX8", // ASL Meredith orange video
-    imageUrl: "https://aslmeredith.com/images/posts/orange_sign.png", // ASL Meredith orange image
-    description:
-      "Đặt bàn tay lên má, sau đó xoay nhẹ như đang vắt cam — biểu tượng cho việc vắt nước cam.",
-  },
-  {
-    title: "Dâu Tây",
-    videoUrl: "https://www.youtube.com/watch?v=5E5i2XH1eX8", // ASL Meredith strawberry video
-    imageUrl: "https://aslmeredith.com/images/posts/strawberry_sign.png", // ASL Meredith strawberry image
-    description:
-      "Đặt đầu ngón trỏ và giữa lên môi, sau đó xoay nhẹ — biểu tượng như đang 've vẩy' dâu tây.",
-  },
-  {
-    title: "Nho",
-    videoUrl: "https://www.youtube.com/watch?v=9b9ZxIeB2_c", // Grapes ASL video
-    imageUrl: "https://www.signingsavvy.com/media_sign/grape/2245.png", // Signing Savvy grapes image
-    description:
-      "Nắm nhẹ các ngón tay lại rồi chuyển động giống như đang nắm chùm nho nhỏ — mô phỏng việc hái nho.",
-  },
-];
+export default function LessonPlayer({ lesson }: { lesson: Lesson }) {
+  const [vocabularyList, setVocabularyList] = useState<Vocabulary[]>([]);
+  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const quizQuestions: Question[] = [
-  {
-    id: 1,
-    videoUrl: "/sign-language-letter-a.jpg",
-    correctAnswer: 0,
-    options: [
-      { id: 1, imageUrl: "/sign-language-letter-a.jpg", label: "Trái Dừa" },
-      { id: 2, imageUrl: "/sign-language-letter-b.jpg", label: "Chuối" },
-      { id: 3, imageUrl: "/sign-language-letter-c.jpg", label: "Cam" },
-      { id: 4, imageUrl: "/sign-language-letter-a.jpg", label: "Dâu Tây" },
-    ],
-  },
-  {
-    id: 2,
-    videoUrl: "/sign-language-letter-b.jpg",
-    correctAnswer: 1,
-    options: [
-      { id: 1, imageUrl: "/sign-language-letter-a.jpg", label: "Trái Dừa" },
-      { id: 2, imageUrl: "/sign-language-letter-b.jpg", label: "Chuối" },
-      { id: 3, imageUrl: "/sign-language-letter-c.jpg", label: "Cam" },
-      { id: 4, imageUrl: "/sign-language-letter-a.jpg", label: "Nho" },
-    ],
-  },
-  {
-    id: 3,
-    videoUrl: "/sign-language-letter-c.jpg",
-    correctAnswer: 2,
-    options: [
-      { id: 1, imageUrl: "/sign-language-letter-a.jpg", label: "Trái Dừa" },
-      { id: 2, imageUrl: "/sign-language-letter-b.jpg", label: "Chuối" },
-      { id: 3, imageUrl: "/sign-language-letter-c.jpg", label: "Cam" },
-      { id: 4, imageUrl: "/sign-language-letter-a.jpg", label: "Dâu Tây" },
-    ],
-  },
-  {
-    id: 4,
-    videoUrl: "/sign-language-letter-a.jpg",
-    correctAnswer: 3,
-    options: [
-      { id: 1, imageUrl: "/sign-language-letter-a.jpg", label: "Trái Dừa" },
-      { id: 2, imageUrl: "/sign-language-letter-b.jpg", label: "Chuối" },
-      { id: 3, imageUrl: "/sign-language-letter-c.jpg", label: "Cam" },
-      { id: 4, imageUrl: "/sign-language-letter-a.jpg", label: "Dâu Tây" },
-    ],
-  },
-  {
-    id: 5,
-    videoUrl: "/sign-language-letter-b.jpg",
-    correctAnswer: 4,
-    options: [
-      { id: 1, imageUrl: "/sign-language-letter-a.jpg", label: "Trái Dừa" },
-      { id: 2, imageUrl: "/sign-language-letter-b.jpg", label: "Chuối" },
-      { id: 3, imageUrl: "/sign-language-letter-c.jpg", label: "Cam" },
-      { id: 4, imageUrl: "/sign-language-letter-a.jpg", label: "Nho" },
-    ],
-  },
-];
+  const { user } = useUserStore();
+  const router = useRouter();
+  // 1. THÊM "summary" VÀO STATE CỦA PHASE
+  const [phase, setPhase] = useState<"introduction" | "quiz" | "summary">(
+    "introduction"
+  );
 
-export default function LessonPlayer() {
-  const [phase, setPhase] = useState<"introduction" | "quiz">("introduction");
   const [currentVocabIndex, setCurrentVocabIndex] = useState(0);
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
-  const [quizAnswers, setQuizAnswers] = useState<(number | null)[]>(
-    new Array(quizQuestions.length).fill(null)
-  );
+  const [quizAnswers, setQuizAnswers] = useState<(number | null)[]>([]);
   const [showQuizResult, setShowQuizResult] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // 2. THÊM STATE ĐỂ GIỮ ĐIỂM SỐ CUỐI CÙNG
+  const [quizPoint, setQuizPoint] = useState(0);
+  const [quizAttemptId, setQuizAttemptId] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Thêm state loading cho việc nộp bài
+  const fetchData = useCallback(async () => {
+    if (!lesson.id) {
+      setError("No lesson ID provided.");
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setPhase("introduction");
+    setCurrentVocabIndex(0);
+    setCurrentQuizIndex(0);
+    setSelectedAnswer(null);
+    setQuizPoint(0); // Reset điểm khi tải data mới
+
+    try {
+      const [vocabResponse, quizResponse] = await Promise.all([
+        fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/lessons/vocabulary?lesson_id=${lesson.id}`
+        ),
+        fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/lesson-quiz?lesson_id=${lesson.id}`
+        ),
+      ]);
+
+      if (!vocabResponse.ok) throw new Error("Failed to fetch vocabulary.");
+      if (!quizResponse.ok) throw new Error("Failed to fetch quiz questions.");
+
+      const vocabData: { vocabulary: BackendVocabularyItem[] } =
+        await vocabResponse.json();
+      const quizData: LessonQuizResponse = await quizResponse.json();
+      const mappedVocabulary: Vocabulary[] = vocabData.vocabulary.map(
+        (item) => ({
+          title: item.word,
+          description: item.description,
+          videoUrl: item.video_url,
+          imageUrl: null,
+        })
+      );
+      console.log(quizData);
+      const fetched_quiz_id = quizData.quiz_id;
+      console.log(fetched_quiz_id);
+      setQuizAttemptId(fetched_quiz_id); // Giả sử bạn đã đổi tên state này
+      setVocabularyList(mappedVocabulary);
+      setQuizQuestions(quizData.questions || []);
+      setQuizAnswers(new Array(quizData.questions?.length || 0).fill(null));
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "An unknown error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [lesson.id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const currentVocab = vocabularyList[currentVocabIndex];
   const currentQuestion = quizQuestions[currentQuizIndex];
 
-  const introProgress = ((currentVocabIndex + 1) / vocabularyList.length) * 100;
-  const quizProgress = ((currentQuizIndex + 1) / quizQuestions.length) * 100;
-  const currentProgress =
-    phase === "introduction" ? introProgress : quizProgress;
+  // Logic tính điểm đúng/sai cho câu hỏi HIỆN TẠI
+  const correctAnswerIndex = currentQuestion
+    ? currentQuestion.options.findIndex((opt) => opt.is_correct)
+    : -1;
+  const isQuizCorrect = quizAnswers[currentQuizIndex] === correctAnswerIndex;
 
-  const isQuizAnswered = quizAnswers[currentQuizIndex] !== null;
-  const isQuizCorrect =
-    quizAnswers[currentQuizIndex] === currentQuestion.correctAnswer;
+  // Logic tính % thanh progress
+  const introProgress =
+    vocabularyList.length > 0
+      ? ((currentVocabIndex + 1) / vocabularyList.length) * 100
+      : 0;
+  const quizProgress =
+    quizQuestions.length > 0
+      ? ((currentQuizIndex + 1) / quizQuestions.length) * 100
+      : 0;
+
+  // 3. SỬA: Cập nhật thanh progress cho cả 3 giai đoạn
+  const currentProgress =
+    phase === "introduction"
+      ? introProgress
+      : phase === "quiz"
+      ? quizProgress
+      : 100; // 100% khi ở màn hình summary
 
   const handleFinishIntroduction = () => {
-    setPhase("quiz");
-    setCurrentQuizIndex(0);
-    setSelectedAnswer(null);
-    setShowQuizResult(false);
+    if (quizQuestions.length > 0) {
+      setPhase("quiz");
+      setCurrentQuizIndex(0);
+      setSelectedAnswer(null);
+      setShowQuizResult(false);
+    } else {
+      handleRestart();
+    }
+  };
+
+  // (handleQuizGeneration không đổi)
+  const handleQuizGeneration = async () => {
+    setIsGenerating(true);
+    setError(null);
+
+    const vocabularyPayload = vocabularyList.map((v) => ({
+      word: v.title,
+      description: v.description,
+      video: v.videoUrl,
+    }));
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/generate-quiz`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lesson_id: lesson.id,
+            lesson_title: lesson.title,
+            user_id: user?.id,
+            vocabulary: vocabularyPayload,
+            session_id: null,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.detail || "Không thể tạo bài kiểm tra");
+      }
+
+      const data = await response.json();
+      const agentResponse = JSON.parse(data.response);
+
+      if (agentResponse.action === "create_quiz") {
+        console.log("Quiz đã được tạo:", agentResponse.payload);
+        await fetchData();
+        setPhase("quiz");
+      } else {
+        throw new Error(agentResponse.payload || "Agent không thể tạo quiz");
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleQuizAnswer = (optionIndex: number) => {
@@ -166,14 +239,82 @@ export default function LessonPlayer() {
     setShowQuizResult(true);
   };
 
+  // 4. SỬA: handleNextQuiz để tính điểm và chuyển sang "summary"
   const handleNextQuiz = () => {
     if (currentQuizIndex < quizQuestions.length - 1) {
+      // Vẫn còn câu hỏi
       setCurrentQuizIndex(currentQuizIndex + 1);
       setShowQuizResult(false);
       setSelectedAnswer(null);
+    } else {
+      // Đây là câu hỏi cuối cùng -> Tính điểm và chuyển sang summary
+
+      // 1. Tính điểm
+      const pointPerQuestion =
+        quizQuestions.length > 0 ? 100 / quizQuestions.length : 0;
+
+      const correctAnswersCount = quizAnswers.filter(
+        (selectedOptionIndex, questionIndex) => {
+          const question = quizQuestions[questionIndex];
+          if (!question || selectedOptionIndex === null) return false;
+
+          const correctOptionIndex = question.options.findIndex(
+            (opt) => opt.is_correct
+          );
+          return selectedOptionIndex === correctOptionIndex;
+        }
+      ).length;
+
+      setQuizPoint(Math.round(correctAnswersCount * pointPerQuestion));
+
+      // 2. Chuyển phase
+      setPhase("summary");
     }
   };
+  const handleCompleteQuiz = async () => {
+    // Kiểm tra các ID cần thiết
+    if (!quizAttemptId || !user?.id) {
+      console.error(
+        "Thiếu ID lượt làm bài hoặc ID người dùng. Không thể nộp điểm."
+      );
+      setError("Lỗi: Không thể nộp điểm. Vui lòng tải lại.");
+      return; // Không làm gì cả nếu thiếu ID
+    }
 
+    setIsSubmitting(true);
+    setError(null);
+    console.log("Testing:", quizAttemptId, user.id, quizPoint, lesson.id);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/quiz/submit`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            quiz_id: quizAttemptId,
+            user_id: parseInt(user.id), // Đảm bảo user ID là số
+            score: quizPoint,
+            lesson_id: lesson.id,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.detail || "Lỗi khi nộp bài");
+      }
+
+      const result = await response.json();
+      console.log("Nộp bài thành công:", result);
+      // Bạn có thể thêm logic ở đây, ví dụ: cập nhật state của user...
+      router.back();
+    } catch (err: any) {
+      console.error("Lỗi API nộp bài:", err);
+      setError(err.message); // Hiển thị lỗi trên màn hình summary
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const handlePreviousQuiz = () => {
     if (currentQuizIndex > 0) {
       setCurrentQuizIndex(currentQuizIndex - 1);
@@ -194,6 +335,7 @@ export default function LessonPlayer() {
     }
   };
 
+  // 5. SỬA: handleRestart để reset cả điểm
   const handleRestart = () => {
     setPhase("introduction");
     setCurrentVocabIndex(0);
@@ -201,29 +343,62 @@ export default function LessonPlayer() {
     setQuizAnswers(new Array(quizQuestions.length).fill(null));
     setShowQuizResult(false);
     setSelectedAnswer(null);
+    setQuizPoint(0); // <-- RESET ĐIỂM
   };
 
-  const correctCount = quizAnswers.filter(
-    (ans, idx) => ans === quizQuestions[idx].correctAnswer
-  ).length;
+  // (Phần JSX cho loading, error, no-vocabulary không đổi)
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-500">
+        <Loader2 className="w-8 h-8 animate-spin text-[#f66868]" />
+        <p className="mt-3 text-lg">Đang tải bài học...</p>
+      </div>
+    );
+  }
+
+  if (error && !isGenerating) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-red-600 bg-red-50 p-6 rounded-lg">
+        <XCircle className="w-8 h-8" />
+        <p className="mt-3 text-lg font-semibold">Lỗi khi tải bài học</p>
+        <p className="text-sm">{error}</p>
+        <Button onClick={fetchData} className="mt-4">
+          Thử lại
+        </Button>
+      </div>
+    );
+  }
+
+  if (vocabularyList.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-500">
+        <p className="text-lg">Không tìm thấy từ vựng nào cho bài học này.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto px-4 py-8">
-      {/* HEADER */}
+      {/* (Header không đổi) */}
       <div className="text-center">
         <h2 className="text-4xl font-extrabold mb-3 bg-gradient-to-r from-[#f66868] to-rose-400 bg-clip-text text-transparent">
           {phase === "introduction"
             ? "Học Từ Vựng Kí Hiệu"
-            : "Kiểm Tra Kiến Thức"}
+            : phase === "quiz"
+            ? "Kiểm Tra Kiến Thức"
+            : "Tổng Kết Kết Quả"}
         </h2>
-        <p className="text-muted-foreground text-sm">
-          {phase === "introduction"
-            ? `Từ vựng ${currentVocabIndex + 1} / ${vocabularyList.length}`
-            : `Câu hỏi ${currentQuizIndex + 1} / ${quizQuestions.length}`}
-        </p>
+        {/* 6. SỬA: Ẩn đếm số câu/từ vựng khi ở màn hình summary */}
+        {phase !== "summary" && (
+          <p className="text-muted-foreground text-sm">
+            {phase === "introduction"
+              ? `Từ vựng ${currentVocabIndex + 1} / ${vocabularyList.length}`
+              : `Câu hỏi ${currentQuizIndex + 1} / ${quizQuestions.length}`}
+          </p>
+        )}
       </div>
 
-      {/* PROGRESS */}
+      {/* (Progress và Tip box không đổi) */}
       <div className="space-y-1">
         <div className="flex justify-between text-sm font-medium">
           <span className="text-foreground">Tiến độ</span>
@@ -246,24 +421,24 @@ export default function LessonPlayer() {
       </div>
 
       {/* === PHASE: INTRODUCTION === */}
-      {phase === "introduction" && (
+      {phase === "introduction" && currentVocab && (
         <VocabularyInfo
           word={currentVocab.title}
           partOfSpeech={currentVocab.partOfSpeech}
           definition={currentVocab.description}
           videoUrl={currentVocab.videoUrl}
-          imageUrl={currentVocab.imageUrl}
+          imageUrl={currentVocab.imageUrl || undefined}
         />
       )}
 
       {/* === PHASE: QUIZ === */}
-      {phase === "quiz" && (
+      {phase === "quiz" && currentQuestion && (
         <Card className="overflow-hidden border-2 shadow-sm hover:shadow-md transition-all scale-[0.98]">
           <CardHeader className="border-b-2 py-2 px-4">
             <div className="flex justify-between items-start">
               <div>
                 <CardTitle className="text-lg font-semibold text-foreground">
-                  Kí Hiệu Này Là Gì?
+                  {currentQuestion.question_text}
                 </CardTitle>
                 <CardDescription className="text-xs mt-0.5">
                   Xem video và chọn đáp án đúng
@@ -274,23 +449,22 @@ export default function LessonPlayer() {
               </Badge>
             </div>
           </CardHeader>
-
           <CardContent className="pt-4 space-y-4 px-4 pb-4">
-            {/* VIDEO */}
-            <div className="relative rounded-lg overflow-hidden aspect-video bg-rose-50 shadow-inner">
-              <img
-                src={currentQuestion.videoUrl}
-                alt="Câu hỏi"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                <button className="w-12 h-12 rounded-full flex items-center justify-center bg-[#f66868] hover:bg-[#f66868]/90 transition">
-                  <Volume2 className="text-white w-6 h-6" />
-                </button>
+            {currentQuestion.video && (
+              <div className="relative rounded-lg overflow-hidden aspect-video bg-rose-50 shadow-inner">
+                <video
+                  key={currentQuestion.id}
+                  src={currentQuestion.video}
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                />
+                <div className="absolute top-0 left-0 h-full w-16 bg-white z-10"></div>
+                <div className="absolute top-0 right-0 h-full w-16 bg-white z-10"></div>
               </div>
-            </div>
+            )}
 
-            {/* OPTIONS */}
             <div className="grid grid-cols-2 gap-3">
               {currentQuestion.options.map((option, index) => (
                 <button
@@ -299,25 +473,22 @@ export default function LessonPlayer() {
                   disabled={showQuizResult}
                   className={`group rounded-lg overflow-hidden border transition-all duration-300 ${
                     selectedAnswer === index
-                      ? isQuizCorrect
+                      ? option.is_correct
                         ? "border-green-500 ring-1 ring-green-300"
                         : "border-red-500 ring-1 ring-red-300"
                       : "hover:border-[#f66868]/70"
                   }`}
                 >
-                  <div className="relative aspect-square">
-                    <img
-                      src={option.imageUrl}
-                      alt={option.label}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
+                  <div className="relative">
                     {selectedAnswer === index && showQuizResult && (
                       <div
                         className={`absolute inset-0 flex items-center justify-center ${
-                          isQuizCorrect ? "bg-green-500/20" : "bg-red-500/20"
+                          option.is_correct
+                            ? "bg-green-500/20"
+                            : "bg-red-500/20"
                         }`}
                       >
-                        {isQuizCorrect ? (
+                        {option.is_correct ? (
                           <CheckCircle2 className="w-8 h-8 text-green-600" />
                         ) : (
                           <XCircle className="w-8 h-8 text-red-600" />
@@ -325,14 +496,13 @@ export default function LessonPlayer() {
                       </div>
                     )}
                   </div>
-                  <div className="p-1.5 bg-white border-t text-xs font-medium text-center">
-                    {option.label}
+                  <div className="p-3 bg-white border-t text-sm font-medium text-center">
+                    {option.option_text}
                   </div>
                 </button>
               ))}
             </div>
 
-            {/* RESULT */}
             {showQuizResult && (
               <div
                 className={`p-3 rounded-md border text-sm ${
@@ -346,14 +516,8 @@ export default function LessonPlayer() {
                 </p>
                 <p className="text-xs leading-snug">
                   {isQuizCorrect
-                    ? `Đúng rồi! Đây là kí hiệu cho "${
-                        currentQuestion.options[currentQuestion.correctAnswer]
-                          .label
-                      }".`
-                    : `Đáp án đúng là "${
-                        currentQuestion.options[currentQuestion.correctAnswer]
-                          .label
-                      }". Hãy thử lại nhé!`}
+                    ? `Đúng rồi! Đây là kí hiệu cho "${currentQuestion.options[correctAnswerIndex]?.option_text}".`
+                    : `Đáp án đúng là "${currentQuestion.options[correctAnswerIndex]?.option_text}". Hãy thử lại nhé!`}
                 </p>
               </div>
             )}
@@ -361,63 +525,159 @@ export default function LessonPlayer() {
         </Card>
       )}
 
+      {/* 7. THÊM: Giao diện cho màn hình SUMMARY */}
+      {phase === "summary" && (
+        <Card className="overflow-hidden border-2 border-rose-100 shadow-sm text-center">
+          <CardHeader className="bg-gradient-to-br from-rose-50 to-white pb-4">
+            <Trophy className="w-16 h-16 text-[#f66868] mx-auto" />
+            <CardTitle className="text-3xl font-bold text-[#f66868] pt-2">
+              Chúc Mừng Hoàn Thành!
+            </CardTitle>
+            <CardDescription className="text-lg text-gray-600">
+              Bạn đã hoàn thành bài kiểm tra.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 p-6">
+            <div className="text-7xl font-bold text-gray-800">{quizPoint}</div>
+            <p className="text-xl text-gray-600 -mt-4">/ 100 điểm</p>
+            <div className="w-full max-w-xs mx-auto">
+              <Progress
+                value={quizPoint}
+                className="h-3 bg-rose-100 [&>div]:bg-[#f66868]"
+              />
+            </div>
+            <p className="text-gray-500">
+              Bạn đã trả lời đúng{" "}
+              <strong>
+                {Math.round((quizPoint / 100) * quizQuestions.length)} /{" "}
+                {quizQuestions.length}
+              </strong>{" "}
+              câu hỏi.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* NAVIGATION */}
       <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          onClick={
-            phase === "introduction" ? handlePreviousVocab : handlePreviousQuiz
-          }
-          disabled={
-            phase === "introduction"
-              ? currentVocabIndex === 0
-              : currentQuizIndex === 0
-          }
-          className="flex items-center gap-2 border-rose-200 text-[#f66868] hover:bg-rose-50"
-        >
-          <ChevronLeft className="h-4 w-4" /> Quay Lại
-        </Button>
+        {/* 8. SỬA: Ẩn nút "Quay Lại" khi ở màn hình summary */}
+        {phase !== "summary" ? (
+          <Button
+            variant="outline"
+            onClick={
+              phase === "introduction"
+                ? handlePreviousVocab
+                : handlePreviousQuiz
+            }
+            disabled={
+              phase === "introduction"
+                ? currentVocabIndex === 0
+                : currentQuizIndex === 0
+            }
+            className="flex items-center gap-2 border-rose-200 text-[#f66868] hover:bg-rose-50"
+          >
+            <ChevronLeft className="h-4 w-4" /> Quay Lại
+          </Button>
+        ) : (
+          <div></div> // Placeholder để giữ nút bên phải ở đúng vị trí
+        )}
 
-        <div className="flex items-center gap-2">
-          {(phase === "introduction" ? vocabularyList : quizQuestions).map(
-            (_, idx) => (
-              <div
-                key={idx}
-                className={`h-2 rounded-full transition-all ${
-                  (phase === "introduction"
-                    ? currentVocabIndex
-                    : currentQuizIndex) === idx
-                    ? "w-8 bg-[#f66868]"
-                    : "w-2 bg-muted"
-                }`}
-              />
-            )
+        {/* 9. SỬA: Ẩn thanh progress dots khi ở màn hình summary */}
+        {phase !== "summary" && (
+          <div className="flex items-center gap-2">
+            {(phase === "introduction" ? vocabularyList : quizQuestions).map(
+              (_, idx) => (
+                <div
+                  key={idx}
+                  className={`h-2 rounded-full transition-all ${
+                    (phase === "introduction"
+                      ? currentVocabIndex
+                      : currentQuizIndex) === idx
+                      ? "w-8 bg-[#f66868]"
+                      : "w-2 bg-muted"
+                  }`}
+                />
+              )
+            )}
+          </div>
+        )}
+
+        {/* 10. SỬA: Cập nhật logic nút chính cho cả 3 phase */}
+        <div className="flex flex-row gap-x-1">
+          <Button
+            onClick={
+              phase === "introduction"
+                ? currentVocabIndex === vocabularyList.length - 1
+                  ? handleFinishIntroduction
+                  : handleNextVocab
+                : phase === "quiz" // Thêm điều kiện check
+                ? currentQuizIndex === quizQuestions.length - 1
+                  ? handleNextQuiz // handleNextQuiz sẽ tự động chuyển sang summary
+                  : handleNextQuiz
+                : handleRestart // Nếu phase là "summary", nút này sẽ là "Restart"
+            }
+            disabled={(phase === "quiz" && !showQuizResult) || isGenerating}
+            className="flex items-center gap-2 bg-[#f66868] hover:bg-[#f66868]/90 text-white shadow-md"
+          >
+            {phase === "introduction" ? (
+              currentVocabIndex === vocabularyList.length - 1 ? (
+                <>
+                  {quizQuestions.length > 0 ? "Làm Kiểm Tra" : "Học lại"}
+                  <ChevronRight className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  Tiếp Tục <ChevronRight className="h-4 w-4" />
+                </>
+              )
+            ) : phase === "quiz" ? ( // Thêm điều kiện check
+              currentQuizIndex === quizQuestions.length - 1 ? (
+                // Câu quiz cuối
+                <>
+                  Hoàn thành <ChevronRight className="h-4 w-4" />
+                </>
+              ) : (
+                // Vẫn còn câu quiz
+                <>
+                  Tiếp Tục <ChevronRight className="h-4 w-4" />
+                </>
+              )
+            ) : (
+              // Phase là "summary"
+              <>
+                <RotateCcw className="h-4 w-4" /> Bắt Đầu Lại
+              </>
+            )}
+          </Button>
+          {phase === "summary" && (
+            <Button
+              className="flex items-center gap-2 bg-[#f66868] hover:bg-[#f66868]/90 text-white shadow-md"
+              onClick={handleCompleteQuiz}
+            >
+              Hoàn thành
+            </Button>
+          )}
+          {/* Nút "Tạo Quiz" (Logic không đổi) */}
+          {phase === "introduction" && quizQuestions.length === 0 && (
+            <Button
+              onClick={handleQuizGeneration}
+              variant="outline"
+              disabled={isGenerating}
+              className="flex items-center gap-2 border-rose-200 text-[#f66868] hover:bg-rose-50"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Đang tạo...
+                </>
+              ) : (
+                <>
+                  <School className="h-4 w-4" /> Tạo Quiz
+                </>
+              )}
+            </Button>
           )}
         </div>
-
-        <Button
-          onClick={
-            phase === "introduction"
-              ? currentVocabIndex === vocabularyList.length - 1
-                ? handleFinishIntroduction
-                : handleNextVocab
-              : currentQuizIndex === quizQuestions.length - 1
-              ? handleRestart
-              : handleNextQuiz
-          }
-          disabled={phase === "quiz" && !showQuizResult}
-          className="flex items-center gap-2 bg-[#f66868] hover:bg-[#f66868]/90 text-white shadow-md"
-        >
-          {phase === "quiz" && currentQuizIndex === quizQuestions.length - 1 ? (
-            <>
-              <RotateCcw className="h-4 w-4" /> Bắt Đầu Lại
-            </>
-          ) : (
-            <>
-              Tiếp Tục <ChevronRight className="h-4 w-4" />
-            </>
-          )}
-        </Button>
       </div>
     </div>
   );

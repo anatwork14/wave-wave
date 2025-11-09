@@ -58,6 +58,11 @@ export default function Page() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isStreaming, setIsStreaming] = useState(false); // For WebSocket state
   const wsRef = useRef<WebSocket | null>(null);
+  const [video, setVideo] = useState(null);
+  const [currentQuizId, setCurrentQuizId] = useState<string | null>(null);
+  const [currentSyllabusId, setCurrentSyllabusId] = useState<string | null>(
+    null
+  );
   // This is the correct frontend call to match the backend fix
   const {
     currentChat,
@@ -111,9 +116,34 @@ export default function Page() {
       if (!response.ok) throw new Error("Agent response failed.");
 
       const data = await response.json(); // { user_id, session_id, response }
-
       const finalAgentContent = data.response.trim();
+      const quizRegex = /\[QuizID:([^\]]+)\]/;
+      const syllabusRegex = /\[SyllabusID:([^\]]+)\]/;
+      // This regex looks for a full URL ending in .mp4
+      const videoRegex = /(https?:\/\/[^\s]+\.mp4)/;
 
+      // 2. Search for matches
+      const quizMatch = finalAgentContent.match(quizRegex);
+      const syllabusMatch = finalAgentContent.match(syllabusRegex);
+      const videoMatch = finalAgentContent.match(videoRegex); // New
+
+      // 3. Update state if a match is found
+      if (quizMatch && quizMatch[1]) {
+        const capturedId = quizMatch[1];
+        setCurrentQuizId(capturedId);
+        console.log("Captured QuizID:", capturedId);
+      }
+      if (syllabusMatch && syllabusMatch[1]) {
+        const capturedId = syllabusMatch[1];
+        setCurrentSyllabusId(capturedId);
+        console.log("Captured SyllabusID:", capturedId);
+      }
+      // New logic for video
+      if (videoMatch && videoMatch[1]) {
+        const capturedUrl = videoMatch[1];
+        setVideo(capturedUrl);
+        console.log("Captured Video URL:", capturedUrl);
+      }
       const agentMessage: Message = {
         role: "assistant",
         content: finalAgentContent,
@@ -217,6 +247,7 @@ export default function Page() {
         // 🎯 THE KEY FIX: Replace all messages in one go
         // This ensures currentChat changes only once, stopping the infinite loop.
         setCurrentChatMessages(currentChat.id, events);
+        console.log(events);
       } catch (err) {
         console.error("Failed to fetch sessions:", err);
         // Optional: Handle error display to the user

@@ -1,109 +1,78 @@
 "use client";
 
-import { useState } from "react";
+// 1. Import useEffect and define the Lesson type
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, Play, CheckCircle2 } from "lucide-react";
 import LessonPlayer from "./lesson-player";
 import ProgressSidebar from "./progress-sidebar";
+import { useUserStore } from "@/store/useUserStore";
 
-const lessons = [
-  {
-    id: 1,
-    title: "Bảng Chữ Cái A-F",
-    description: "Học các kí hiệu từ A đến F",
-    level: "Cơ bản",
-    progress: 100,
-    status: "completed",
-    duration: "15 phút",
-  },
-  {
-    id: 2,
-    title: "Bảng Chữ Cái G-L",
-    description: "Học các kí hiệu từ G đến L",
-    level: "Cơ bản",
-    progress: 100,
-    status: "completed",
-    duration: "15 phút",
-  },
-  {
-    id: 3,
-    title: "Bảng Chữ Cái M-R",
-    description: "Học các kí hiệu từ M đến R",
-    level: "Cơ bản",
-    progress: 65,
-    status: "in-progress",
-    duration: "15 phút",
-  },
-  {
-    id: 4,
-    title: "Bảng Chữ Cái S-Z",
-    description: "Học các kí hiệu từ S đến Z",
-    level: "Cơ bản",
-    progress: 0,
-    status: "locked",
-    duration: "15 phút",
-  },
-  {
-    id: 5,
-    title: "Số Từ 0-5",
-    description: "Kí hiệu cho các con số 0-5",
-    level: "Cơ bản",
-    progress: 0,
-    status: "locked",
-    duration: "12 phút",
-  },
-  {
-    id: 6,
-    title: "Số Từ 6-10",
-    description: "Kí hiệu cho các con số 6-10",
-    level: "Cơ bản",
-    progress: 0,
-    status: "locked",
-    duration: "12 phút",
-  },
-  {
-    id: 7,
-    title: "Lời Chào Cơ Bản",
-    description: "Cách chào hỏi bằng kí hiệu",
-    level: "Nâng cao",
-    progress: 0,
-    status: "locked",
-    duration: "18 phút",
-  },
-  {
-    id: 8,
-    title: "Cảm Xúc",
-    description: "Biểu đạt cảm xúc qua kí hiệu",
-    level: "Nâng cao",
-    progress: 0,
-    status: "locked",
-    duration: "20 phút",
-  },
-  {
-    id: 9,
-    title: "Gia Đình",
-    description: "Kí hiệu cho các thành viên gia đình",
-    level: "Nâng cao",
-    progress: 0,
-    status: "locked",
-    duration: "22 phút",
-  },
-  {
-    id: 10,
-    title: "Hoạt Động Hàng Ngày",
-    description: "Kí hiệu cho các hoạt động thường ngày",
-    level: "Nâng cao",
-    progress: 0,
-    status: "locked",
-    duration: "25 phút",
-  },
-];
+// 2. Define the Lesson type based on your hardcoded data
+// (This should match what your API returns)
+type LessonStatus = "complete" | "in-progress" | "not_start";
 
-export default function LessonTab() {
+interface Lesson {
+  id: number;
+  title: string;
+  description: string;
+  vocabularyCount: number;
+  lesson_status: LessonStatus;
+  level: "Cơ bản";
+}
+
+// 3. Fix the props signature
+// It must be ({ syllabusId }: { ... })
+export default function LessonTab({
+  syllabusId,
+}: {
+  syllabusId: string | null;
+}) {
+  // 4. Add state for fetched lessons and loading
+  const { user } = useUserStore();
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState<number | null>(null);
 
-  if (selectedLesson !== null) {
+  // 5. Add useEffect to fetch lessons when syllabusId changes
+  useEffect(() => {
+    // Don't fetch if no syllabus is selected
+    if (!syllabusId) {
+      setIsLoading(false);
+      setLessons([]); // Clear any previous lessons
+      return;
+    }
+
+    const fetchLessons = async () => {
+      setIsLoading(true);
+      setSelectedLesson(null); // Clear selection when changing syllabus
+      try {
+        // Fetch lessons for the specific syllabus
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/syllabuses/${syllabusId}/lessons?user_id=${user?.id}` // <-- TEMP user_id=1 for testing
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch lessons");
+        }
+        // Assuming API returns { lessons: [...] }
+        const data: { lessons: Lesson[] } = await response.json();
+        setLessons(data.lessons || []);
+      } catch (error) {
+        console.error(error);
+        setLessons([]); // Clear on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLessons();
+  }, [syllabusId]); // The crucial dependency
+
+  // 6. Find the lesson object to pass to the player
+  const lessonToPlay = lessons.find((l) => l.id === selectedLesson);
+
+  if (selectedLesson !== null && lessonToPlay) {
     return (
       <div className="space-y-6">
         <Button
@@ -113,11 +82,28 @@ export default function LessonTab() {
         >
           ← Quay Lại Danh Sách
         </Button>
-        <LessonPlayer />
+        {/* 7. Pass the selected lesson object to the player */}
+        <LessonPlayer lesson={lessonToPlay} />
       </div>
     );
   }
 
+  // 8. Add Loading and Empty States
+  if (isLoading) {
+    return (
+      <div className="text-center text-gray-500 py-10">Đang tải bài học...</div>
+    );
+  }
+
+  if (lessons.length === 0) {
+    return (
+      <div className="text-center text-gray-500 py-10">
+        Không tìm thấy bài học nào cho chủ đề này.
+      </div>
+    );
+  }
+
+  // --- Main Return (Lesson List) ---
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-6">
@@ -126,26 +112,22 @@ export default function LessonTab() {
           <p className="text-[#f66868]">Học bài theo cách lộ trình của bạn</p>
         </div>
         <div className="grid gap-5 md:grid-cols-2">
+          {/* 9. Map over the 'lessons' state variable (not the hardcoded one) */}
           {lessons.map((lesson) => (
             <Card
               key={lesson.id}
-              className={`overflow-hidden transition-all duration-500 rounded-2xl border border-rose-100 hover:border-[#F66868]/60 hover:shadow-[0_0_12px_#F66868]/20 ${
-                lesson.status === "locked"
-                  ? "opacity-60 cursor-not-allowed"
-                  : "cursor-pointer"
-              }`}
+              className={`overflow-hidden transition-all duration-500 rounded-2xl border border-rose-100 hover:border-[#F66868]/60 ${
+                lesson.lesson_status == "complete" &&
+                "border-green-200 hover:border-green-300"
+              } hover:shadow-[0_0_12px_#F66868]/20`}
             >
               {/* Header */}
               <CardHeader className="">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle
-                      className={`text-lg font-semibold ${
-                        lesson.level == "Cơ bản"
-                          ? "text-[#f66868]"
-                          : lesson.level == "Nâng cao"
-                          ? "text-yellow-500"
-                          : ""
+                      className={`text-lg font-semibold text-[#f66868] ${
+                        lesson.lesson_status == "complete" && "text-green-500"
                       }`}
                     >
                       {lesson.title}
@@ -163,11 +145,8 @@ export default function LessonTab() {
                     </p>
                   </div>
 
-                  {lesson.status === "completed" && (
+                  {lesson.lesson_status === "complete" && (
                     <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  )}
-                  {lesson.status === "locked" && (
-                    <Lock className="h-5 w-5 text-gray-400 flex-shrink-0" />
                   )}
                 </div>
               </CardHeader>
@@ -183,55 +162,41 @@ export default function LessonTab() {
                         : "bg-yellow-200 text-yellow-500"
                     }`}
                   >
-                    {lesson.level}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    {lesson.duration}
+                    Cơ bản
                   </span>
                 </div>
-
-                {/* Progress */}
-                {lesson.status !== "locked" && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Tiến độ</span>
-                      <span className="font-semibold text-[#F66868]">
-                        {lesson.progress}%
-                      </span>
-                    </div>
-                    <div className="h-2 bg-rose-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#F66868] transition-all duration-500"
-                        style={{ width: `${lesson.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
 
                 {/* Action Button */}
                 <Button
                   className={`w-full text-sm font-semibold transition-all duration-300 rounded-xl
-            ${
-              lesson.status === "completed"
-                ? "border border-[#F66868]/60 text-white hover:bg-[#F66868]/10 hover:text-[#f66868]"
-                : lesson.status === "in-progress"
-                ? "bg-[#F66868] hover:bg-[#F66868]/90 text-white"
-                : "bg-gray-100 text-gray-500 cursor-not-allowed"
-            }`}
-                  disabled={lesson.status === "locked"}
+    ${
+      lesson.lesson_status === "complete"
+        ? "text-white bg-green-500 hover:bg-green-600" // "Ôn Tập" style
+        : lesson.lesson_status === "in-progress" ||
+          lesson.lesson_status === "not_start"
+        ? "bg-[#F66868] hover:bg-[#F66868]/90 text-white" // "Tiếp Tục" and "Bắt đầu" style
+        : "bg-gray-100 text-gray-500 cursor-not-allowed" // "locked" style
+    }`}
                   onClick={() => setSelectedLesson(lesson.id)}
                 >
-                  {lesson.status === "locked" && (
-                    <Lock className="h-4 w-4 mr-2" />
-                  )}
-                  {lesson.status === "completed" && "Ôn Tập"}
-                  {lesson.status === "in-progress" && (
+                  {/* Ôn Tập */}
+                  {lesson.lesson_status === "complete" && "Ôn Tập"}
+
+                  {/* Tiếp Tục */}
+                  {lesson.lesson_status === "in-progress" && (
                     <>
                       <Play className="h-4 w-4 mr-2" />
                       Tiếp Tục
                     </>
                   )}
-                  {lesson.status === "locked" && "Bị Khóa"}
+
+                  {/* Bắt đầu */}
+                  {lesson.lesson_status === "not_start" && (
+                    <>
+                      <Play className="h-4 w-4 mr-2" />
+                      Bắt đầu
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>
@@ -241,7 +206,10 @@ export default function LessonTab() {
 
       <div className="lg:col-span-1">
         <div className="sticky top-24">
+          {/* 10. Pass the fetched lessons to the sidebar */}
           <ProgressSidebar
+            syllabusId={syllabusId as string}
+            lessons={lessons}
             selectedLessonId={selectedLesson ?? undefined}
             onSelectLesson={setSelectedLesson}
           />

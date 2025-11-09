@@ -10,7 +10,6 @@ import {
   ClipboardCheck,
   SkipForward,
 } from "lucide-react";
-import { Lesson } from "@/app/study/map/page";
 import Link from "next/link";
 import {
   Popover,
@@ -25,9 +24,11 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+import { removeBrackets } from "@/lib/utils";
+import { MappedSyllabus } from "@/app/study/map/page";
 
 type MedicalTerminologyCardProps = {
-  lesson: Lesson;
+  lesson: MappedSyllabus;
 };
 
 const statusMapping = (status: string) => {
@@ -69,7 +70,7 @@ export default function MedicalTerminologyCard({
   const [hasTakenTest, setHasTakenTest] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const { label, icon, color, text } = statusMapping(lesson.status);
-
+  lesson.title = removeBrackets(lesson.title);
   return (
     <div className="flex items-center justify-center">
       <div className="relative w-full max-w-md bg-white rounded-3xl border p-6">
@@ -81,27 +82,38 @@ export default function MedicalTerminologyCard({
         </button>
 
         {/* Title */}
-        <h2 className="text-4xl font-bold text-gray-900 mb-3 leading-tight">
-          {lesson.title.split(" ").slice(0, 1).join(" ")}
+        <h2 className="text-3xl font-bold text-gray-900 mb-3 leading-tight">
+          {lesson.title.split(" ").slice(0, 3).join(" ")}
           <br />
-          {lesson.title.split(" ").slice(1).join(" ")}
+          {lesson.title.split(" ").slice(3, 6).join(" ")}
+          <br />
+          {lesson.title.split(" ").slice(6, 9).join(" ")}
+          <br />
+          {lesson.title.split(" ").slice(9).join(" ")}
         </h2>
 
         {/* Description */}
         <p className="text-gray-500 text-base mb-8 leading-relaxed">
-          {lesson.description.split(" ").slice(0, 6).join(" ")}
-          <br />
-          {lesson.description.split(" ").slice(6).join(" ")}
+          {lesson.description}
         </p>
 
         {/* Bottom Actions */}
         <div className="flex items-center justify-between">
           {/* Status Badge */}
-          <div
-            className={`flex items-center gap-2 ${color} px-4 py-2.5 rounded-full`}
-          >
-            <span className={`${text} font-medium text-sm`}>{label}</span>
-            <span className="text-xl">{icon}</span>
+          <div className="flex flex-row gap-x-2">
+            <div
+              className={`flex items-center gap-2 ${color} px-4 py-2.5 rounded-full`}
+            >
+              <span className={`${text} font-medium text-sm`}>{label}</span>
+              <span className="text-xl">{icon}</span>
+            </div>
+            <div
+              className={`flex items-center gap-2 ${color} px-4 py-2.5 rounded-full`}
+            >
+              <span className={`${text} font-medium text-sm`}>
+                {lesson.lesson_count} Bài học
+              </span>
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -206,11 +218,6 @@ export default function MedicalTerminologyCard({
             )}
           </div>
         </div>
-
-        {/* Decorative Dotted Line */}
-        <div className="absolute right-[23px] top-24 bottom-24 w-px border-r-2 border-dotted border-[#F66868]"></div>
-        <div className="absolute right-5 top-24 w-2 h-2 bg-[#F66868] rounded-full"></div>
-        <div className="absolute right-5 bottom-24 w-2 h-2 bg-[#F66868] rounded-full"></div>
       </div>
     </div>
   );

@@ -11,11 +11,11 @@ import {
 } from "@/components/ui/select";
 import { User, useUserStore } from "@/store/useUserStore";
 import { BookOpen, Hand, Zap } from "lucide-react";
-import { useEffect, useState } from "react";
-import PracticeTab from "./components/practice-tab";
-import LessonTab from "./components/lesson-tab";
+import { useEffect, useState, use } from "react";
+import PracticeTab from "../../components/practice-tab";
+import LessonTab from "../../components/lesson-tab";
 import { removeBrackets } from "@/lib/utils";
-import { SyllabusInfo } from "../map/page"; // (Assuming this path is correct)
+import { SyllabusInfo } from "../../../map/page";
 
 const tempUser: User = {
   id: "1",
@@ -26,20 +26,27 @@ const tempUser: User = {
 
 // --- 1. CHANGE COMPONENT SIGNATURE ---
 // Accept 'params' which contains the { id: "2" } from the URL
-export default function StudyPage({ params }: { params: { id: string } }) {
+export default function StudyPage({
+  params,
+}: {
+  params: Promise<{ id: string }>; // 1. Update the type to be a Promise
+}) {
+  // --- 2. GET THE ID FROM PARAMS ---
+  const resolvedParams = use(params); // 2. Unwrap the promise
+  const urlSyllabusId = resolvedParams.id; // 3. Access the id
   const { user, setUser } = useUserStore();
   const [activeTab, setActiveTab] = useState("lessons");
   const [syllabuses, setSyllabuses] = useState<SyllabusInfo[]>([]);
   const [selectedSyllabusId, setSelectedSyllabusId] = useState<string | null>(
-    null
+    urlSyllabusId
   );
   const [isLoadingSyllabus, setIsLoadingSyllabus] = useState(true);
-
-  // --- 2. GET THE ID FROM PARAMS ---
+  console.log("Selected Syllabus ID:", selectedSyllabusId);
   // This effect sets the user
   useEffect(() => {
     setUser(tempUser);
-  }, [setUser]);
+    setSelectedSyllabusId(urlSyllabusId);
+  }, [setUser, urlSyllabusId]);
 
   // This effect fetches data and sets the selected ID
   useEffect(() => {
@@ -56,14 +63,8 @@ export default function StudyPage({ params }: { params: { id: string } }) {
         }
 
         const data: { syllabuses: SyllabusInfo[] } = await response.json();
-        const sortedSyllabuses = data.syllabuses.sort((a, b) => {
-          const isAIn2to11 = a.id >= 2 && a.id <= 11;
-          const isBIn2to11 = b.id >= 2 && b.id <= 11;
+        const sortedSyllabuses = data.syllabuses.sort((a, b) => a.id - b.id);
 
-          if (isAIn2to11 && !isBIn2to11) return 1; // a goes after b
-          if (!isAIn2to11 && isBIn2to11) return -1; // a goes before b
-          return a.id - b.id; // both in same group, sort ascending
-        });
         // --- 3. FIX: SET ALL SYLLABUSES FOR THE DROPDOWN ---
         // Do not filter the list, just set the full sorted list
         setSyllabuses(sortedSyllabuses);
@@ -71,6 +72,25 @@ export default function StudyPage({ params }: { params: { id: string } }) {
         // --- 4. NEW SELECTION LOGIC (PRIORITIZED) ---
 
         // Check if the ID from the URL is valid
+        const isValidUrlId = sortedSyllabuses.some(
+          (s) => s.id.toString() === urlSyllabusId
+        );
+
+        if (isValidUrlId) {
+          // Priority 1: Set ID from URL
+          setSelectedSyllabusId(urlSyllabusId);
+        } else {
+          // Priority 2: Find "in-progress"
+          const inProgressSyllabus = sortedSyllabuses.find(
+            (s) => s.status === "in-progress"
+          );
+          if (inProgressSyllabus) {
+            setSelectedSyllabusId(inProgressSyllabus.id.toString());
+          } else if (sortedSyllabuses.length > 0) {
+            // Priority 3: Default to the first syllabus
+            setSelectedSyllabusId(sortedSyllabuses[0].id.toString());
+          }
+        }
       } catch (error) {
         console.error("Error fetching syllabuses:", error);
       } finally {
@@ -82,7 +102,7 @@ export default function StudyPage({ params }: { params: { id: string } }) {
 
     // --- 5. ADD 'urlSyllabusId' TO DEPENDENCY ARRAY ---
     // This ensures the component reacts if the URL ID changes
-  }, [user]);
+  }, [user, urlSyllabusId]);
 
   if (!user) {
     return (
@@ -135,7 +155,6 @@ export default function StudyPage({ params }: { params: { id: string } }) {
                 <Select
                   value={selectedSyllabusId || ""}
                   onValueChange={setSelectedSyllabusId}
-                  defaultValue="Chọn chủ đề"
                 >
                   <SelectTrigger
                     className="w-[280px] gap-2 rounded-full border-2 
@@ -150,6 +169,7 @@ export default function StudyPage({ params }: { params: { id: string } }) {
                         key={syllabus.id}
                         value={syllabus.id.toString()}
                         disabled={syllabus.status === "locked"}
+                        className={`${syllabus.id} >= 12 ? 'bg-yellow-50/70 text-yellow-600' : ''}`}
                       >
                         {removeBrackets(syllabus.title)}
                       </SelectItem>
@@ -170,7 +190,7 @@ export default function StudyPage({ params }: { params: { id: string } }) {
           className="w-full text-3xl"
         >
           <TabsContent value="lessons" className="space-y-6">
-            <LessonTab syllabusId={selectedSyllabusId as string} />
+            <LessonTab syllabusId={selectedSyllabusId} />
           </TabsContent>
 
           <TabsContent value="practice" className="space-y-6">

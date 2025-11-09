@@ -13,10 +13,10 @@ export default function LearningSummary() {
   useEffect(() => {
     setTimeout(() => {
       setStats({
-        totalCourses: 12,
-        expectedHours: 48,
+        totalCourses: 10,
+        expectedHours: 24,
         averageScore: 8.7,
-        totalLearners: 2560,
+        totalLearners: 200,
       });
     }, 1000);
   }, []);

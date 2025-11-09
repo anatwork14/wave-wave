@@ -10,6 +10,10 @@ export function formatActor(name: string) {
   else "Agent";
 }
 
+export function removeBrackets(text: string): string {
+  // Remove anything inside parentheses (and the parentheses)
+  return text.replace(/\s*\(.*?\)/g, "").trim();
+}
 /**
  * Formats an ISO time string into a "time ago" format.
  * @param timeString The ISO 8601 timestamp (e.g., "2025-10-25T12:30:44.488876")

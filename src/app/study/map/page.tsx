@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Play,
   CheckCircle2,
@@ -24,89 +24,110 @@ import MedicalTerminologyCard from "@/components/MedicalTerminologyCard";
 
 type LessonStatus = "completed" | "in-progress" | "upcoming" | "locked";
 
-export interface Lesson {
+export interface MappedSyllabus {
   id: string;
   title: string;
   description: string;
   status: LessonStatus;
-  duration?: string;
-  participants?: number;
+  progress: number; // percentage from 0 to 100
+  lesson_count: number;
   color: string;
   icon: React.ReactNode;
   link: string;
 }
 
-const lessons: Lesson[] = [
-  {
-    id: "1",
-    title: "Basic Greetings",
-    description: "Learn essential sign language greetings and introductions.",
-    status: "completed",
-    duration: "15 min",
-    participants: 234,
-    color: "bg-emerald-100 border-emerald-300",
-    icon: <Star className="w-5 h-5 text-white" />,
-    link: "/study/learn/topic/1",
-  },
-  {
-    id: "2",
-    title: "Common Phrases",
-    description: "Master everyday phrases for effective communication.",
-    status: "completed",
-    duration: "20 min",
-    participants: 189,
-    color: "bg-emerald-100 border-emerald-300",
-    icon: <CheckCircle2 className="w-5 h-5 text-white" />,
-    link: "/study/learn/topic/1",
-  },
-  {
-    id: "3",
-    title: "Numbers and Counting",
-    description: "Learn to express numbers and quantities in sign language.",
-    status: "in-progress",
-    duration: "25 min",
-    participants: 156,
-    color: "bg-purple-100 border-purple-300",
-    icon: <Play className="w-5 h-5 text-white" />,
-    link: "/study/learn/topic/1",
-  },
-  {
-    id: "4",
-    title: "Family and Relations",
-    description: "Understand signs for family members and relationships.",
-    status: "upcoming",
-    duration: "18 min",
-    color: "bg-blue-50 border-blue-200",
-    icon: <Users className="w-5 h-5 text-white" />,
-    link: "/study/learn/topic/1",
-  },
-  {
-    id: "5",
-    title: "Food and Dining",
-    description: "Express food preferences and dining experiences.",
-    status: "upcoming",
-    duration: "22 min",
-    color: "bg-amber-50 border-amber-200",
-    icon: <BookOpen className="w-5 h-5 text-white" />,
-    link: "/study/learn/topic/1",
-  },
-  {
-    id: "6",
-    title: "Emotions and Feelings",
-    description: "Communicate your emotions and understand others' feelings.",
-    status: "locked",
-    duration: "20 min",
-    color: "bg-gray-100 border-gray-300",
-    icon: <Lock className="w-5 h-5 text-white" />,
-    link: "/study/learn/topic/1",
-  },
+// ADDITION: This interface matches the data from your FastAPI backend
+export interface SyllabusInfo {
+  id: number; // Assuming ID is a number from the database
+  title: string;
+  description: string;
+  progress: number;
+  status: string;
+  lesson_count: number;
+}
+
+// MODIFICATION: The hardcoded 'lessons' array is removed.
+// We will fetch this data from the API.
+
+// These are the static icons and colors your hardcoded array used.
+// We can use them to style the data we get from the backend.
+const ICONS = [
+  <Star className="w-5 h-5 text-white" />,
+  <CheckCircle2 className="w-5 h-5 text-white" />,
+  <Play className="w-5 h-5 text-white" />,
+  <Users className="w-5 h-5 text-white" />,
+  <BookOpen className="w-5 h-5 text-white" />,
+  <Lock className="w-5 h-5 text-white" />,
+];
+
+const COLORS = [
+  "bg-emerald-100 border-emerald-300",
+  "bg-emerald-100 border-emerald-300",
+  "bg-purple-100 border-purple-300",
+  "bg-blue-50 border-blue-200",
+  "bg-amber-50 border-amber-200",
+  "bg-gray-100 border-gray-300",
 ];
 
 export default function MapPage() {
   const { user } = useUserStore();
+  const [syllabuses, setSyllabuses] = useState<MappedSyllabus[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const fetchSyllabuses = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/syllabuses/?user_id=${user?.id}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch data from server");
+        }
 
-  const completedCount = lessons.filter((l) => l.status === "completed").length;
-  const totalCount = lessons.length;
+        const data: { syllabuses: SyllabusInfo[] } = await response.json();
+
+        // --- ADD THIS LINE ---
+        // Sort the array by 'id' (ascending) before you map it
+        const sortedSyllabuses = data.syllabuses.sort((a, b) => a.id - b.id);
+        // ---------------------
+
+        // Now, map the *sorted* array
+        const mapped_syllabus: MappedSyllabus[] = sortedSyllabuses.map(
+          (syllabus, index) => {
+            // ... (rest of your mapping logic)
+            return {
+              id: syllabus.id.toString(),
+              title: syllabus.title,
+              description: syllabus.description,
+              progress: syllabus.progress,
+              status: syllabus.status as LessonStatus,
+              color: COLORS[index % COLORS.length],
+              lesson_count: syllabus.lesson_count,
+              icon: ICONS[index % ICONS.length],
+              link: `/study/learn/syllabus/${syllabus.id}`,
+            };
+          }
+        );
+
+        setSyllabuses(mapped_syllabus);
+        setError(null);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // ... (rest of your useEffect, assuming you have a user check)
+    if (user?.id) {
+      fetchSyllabuses();
+    }
+  }, [user?.id]); // Make sure to add user.id as a dependency
+  const completedCount = syllabuses.filter(
+    (l) => l.status === "completed"
+  ).length;
+  const totalCount = syllabuses.length;
   const progressPercentage = (completedCount / totalCount) * 100;
 
   return (
@@ -114,31 +135,40 @@ export default function MapPage() {
       {/* LEFT SECTION (60%) - Learning Path */}
       <div className="xl:w-[65%] max-w-5xl mx-auto">
         <LearningSummary />
-
+        {isLoading && (
+          <div className="text-center text-lg mt-10">
+            Loading learning path...
+          </div>
+        )}{" "}
+        {error && (
+          <div className="text-center text-lg mt-10 text-red-500">
+            Error: {error}{" "}
+          </div>
+        )}
         <div className="relative mx-auto">
           {/* Timeline Line */}
           <div className="absolute left-1/2 top-6 bottom-0 w-1 -ml-0.5 bg-gradient-to-b from-[#F66868]/20 to-[#F66868]/80" />
 
           <div className="space-y-8">
-            {lessons.map((lesson, index) => {
+            {syllabuses.map((syllabus, index) => {
               const isLeft = index % 2 === 0;
 
               return (
-                <div key={lesson.id} className="relative">
+                <div key={syllabus.id} className="relative">
                   {/* Node on line */}
                   <div
                     className={`absolute left-1/2 top-6 -ml-4 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center z-10 bg-[#F66868]`}
                   >
-                    {lesson.status === "completed" && (
+                    {syllabus.status === "completed" && (
                       <CheckCircle2 className="w-4 h-4 text-white" />
                     )}
-                    {lesson.status === "in-progress" && (
+                    {syllabus.status === "in-progress" && (
                       <Play className="w-4 h-4 text-white" />
                     )}
-                    {lesson.status === "upcoming" && (
+                    {syllabus.status === "upcoming" && (
                       <SquareDashed className="w-4 h-4 text-white" />
                     )}
-                    {lesson.status === "locked" && (
+                    {syllabus.status === "locked" && (
                       <Lock className="w-3 h-3 text-white" />
                     )}
                   </div>
@@ -149,7 +179,7 @@ export default function MapPage() {
                       <>
                         {/* Left Card */}
                         <div className="pr-8">
-                          <MedicalTerminologyCard lesson={lesson} />
+                          <MedicalTerminologyCard lesson={syllabus} />
                         </div>
 
                         {/* Right Image */}
@@ -180,7 +210,7 @@ export default function MapPage() {
 
                         {/* Right Card */}
                         <div className="pl-8">
-                          <MedicalTerminologyCard lesson={lesson} />
+                          <MedicalTerminologyCard lesson={syllabus} />
                         </div>
                       </>
                     )}

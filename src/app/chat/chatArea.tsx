@@ -53,6 +53,9 @@ const TypewriterEffect: React.FC<{ content: string }> = ({ content }) => {
 const MessageBubble: React.FC<Message & { isFinal: boolean }> = ({
   role,
   content,
+  video,
+  quiz,
+  syllabus,
   isFinal,
 }) => {
   const isUser = role === "user";
@@ -66,19 +69,31 @@ const MessageBubble: React.FC<Message & { isFinal: boolean }> = ({
             : "bg-gray-100 text-gray-800 rounded-tl-none"
         } whitespace-pre-wrap`}
       >
-        {/* Render assistant message with typewriter effect only when it's the final message */}
+        {/* Nội dung tin nhắn */}
         {isUser || isFinal ? (
-          <MarkdownRenderer
-            content={content}
+          <div
             className={`${
-              isUser
-                ? "bg-[#C73B3B] text-white rounded-br-none"
-                : "bg-gray-100 text-gray-800 rounded-tl-none"
+              isUser ? "bg-[#C73B3B] text-white" : "bg-gray-100 text-gray-800"
             }`}
-          />
+          >
+            {content}
+          </div>
         ) : (
-          // Fallback for non-final assistant message (shouldn't happen with this logic, but good for safety)
-          <MarkdownRenderer content={content} />
+          <div>{content}</div>
+        )}
+
+        {/* 🎬 Nếu có video thì hiển thị ở dưới */}
+        {video && (
+          <div className="mt-3">
+            <video
+              controls
+              className="rounded-lg shadow-md w-full max-w-md"
+              preload="metadata"
+            >
+              <source src={video} type="video/mp4" />
+              Trình duyệt của bạn không hỗ trợ video.
+            </video>
+          </div>
         )}
       </div>
     </div>
@@ -123,6 +138,16 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages = [] }) => {
                   className={`max-w-[90%] p-3 rounded-xl shadow-md bg-gray-100 text-gray-800 rounded-tl-none whitespace-pre-wrap`}
                 >
                   <TypewriterEffect content={message.content} />
+                  {message.video && (
+                    <video
+                      controls
+                      className="rounded-lg shadow-md w-full max-w-lg"
+                      preload="metadata"
+                    >
+                      <source src={message.video} type="video/mp4" />
+                      Trình duyệt của bạn không hỗ trợ video.
+                    </video>
+                  )}
                 </div>
               </div>
             ) : (
@@ -130,6 +155,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages = [] }) => {
               <MessageBubble
                 role={message.role}
                 content={message.content}
+                video={message.video}
                 isFinal={false} // Prevents the MessageBubble from applying Typewriter logic inside
               />
             )}

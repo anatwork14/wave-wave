@@ -13,6 +13,11 @@ type UserState = {
 };
 
 export const useUserStore = create<UserState>((set) => ({
-  user: null,
+  user: {
+    id: "1",
+    name: "Khanh An",
+    avatar: "/avatars/avatar-1.png",
+    email: "anatwork14@gmail.com",
+  },
   setUser: (user) => set({ user }),
 }));

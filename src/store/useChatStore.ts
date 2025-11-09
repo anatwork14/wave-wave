@@ -4,6 +4,9 @@ import { create } from "zustand";
 export interface Message {
   role: "user" | "assistant";
   content: string;
+  video?: string;
+  quiz?: string;
+  syllabus?: string;
 }
 
 interface ChatSession {

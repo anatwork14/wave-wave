@@ -9,6 +9,7 @@ import {
   Image as ImageIcon,
   Sparkles,
   Camera,
+  Loader2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -17,14 +18,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useUserStore } from "@/store/useUserStore";
+import MarkdownRenderer from "../MarkdownRender";
 interface VocabularyInfoProps {
   word: string;
   partOfSpeech?: string;
   definition?: string;
   videoUrl?: string;
   imageUrl?: string;
-  contextResult?: string; // ⚡ optional: text shown when context is fetched
-  onGetContext?: () => Promise<string> | void; // ⚡ optional async callback
 }
 
 export default function VocabularyInfo({
@@ -33,8 +34,6 @@ export default function VocabularyInfo({
   definition,
   videoUrl,
   imageUrl,
-  contextResult,
-  onGetContext,
 }: VocabularyInfoProps) {
   const [bookmarked, setBookmarked] = useState(false);
   const [isShare, setIsShare] = useState(false);
@@ -42,10 +41,11 @@ export default function VocabularyInfo({
     videoUrl ? "video" : "image"
   );
   const [showContext, setShowContext] = useState(false);
-  const [context, setContext] = useState<string | null>(contextResult ?? null);
-  const [loadingContext, setLoadingContext] = useState(false);
+  const [isLoadingContext, setIsLoadingContext] = useState(false);
+  const [contextText, setContextText] = useState("");
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
-
+  const { user } = useUserStore();
   const handleCameraAccess = () => {
     setIsCameraActive((prev) => !prev);
     // later you can add actual camera access logic
@@ -59,28 +59,58 @@ export default function VocabularyInfo({
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [bookmarked, isShare]);
+    if (word) {
+      setShowContext(false);
+      setContextText("");
+      setSessionId(null);
+    }
+  }, [bookmarked, isShare, word]);
 
   // Handle context toggle
   const handleContextToggle = async () => {
-    if (showContext) {
-      // Hide context
-      setShowContext(false);
-      return;
-    }
+    // --- If we are about to SHOW the context ---
+    if (!showContext) {
+      setIsLoadingContext(true);
+      setContextText(""); // Clear old text
 
-    // Show context (fetch if necessary)
-    setShowContext(true);
-    if (!context && onGetContext) {
-      setLoadingContext(true);
+      // 1. Construct the prompt
+      const prompt = `Khi nào sử dụng từ này, trong trường hợp, hoàn cảnh nào: "${word}"`;
+      const API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+
       try {
-        const result = await onGetContext();
-        if (typeof result === "string") setContext(result);
+        // 2. Call the API
+        const response = await fetch(`${API_URL}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: prompt,
+            user_id: user?.id || "guest-user", // Send user ID or a fallback
+            session_id: sessionId, // Send null or the existing session ID
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch context from API");
+        }
+
+        // 3. Get the response
+        const data = await response.json();
+        // Your API returns: { user_id, session_id, response }
+
+        // 4. Update state with the new data
+        setContextText(data.response); // Save the text
+        setSessionId(data.session_id); // Save the new session ID
+        setShowContext(true); // Toggle to show the text
       } catch (error) {
-        console.error("Failed to get context:", error);
+        console.error("Failed to fetch context:", error);
+        setContextText("Lỗi: Không thể tải ngữ cảnh."); // Show an error
+        setShowContext(true); // Still toggle to show the error message
       } finally {
-        setLoadingContext(false);
+        setIsLoadingContext(false);
       }
+    } else {
+      // --- If context is already showing, just toggle it off ---
+      setShowContext(false);
     }
   };
 
@@ -89,7 +119,7 @@ export default function VocabularyInfo({
       {/* Header Section */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-baseline gap-3">
-          <h1 className="text-4xl font-serif text-[#f66868]">{word}</h1>
+          <h1 className="text-4xl font-baloo text-[#f66868]">{word}</h1>
           {partOfSpeech && (
             <div className="text-gray-500 italic text-lg">{partOfSpeech}</div>
           )}
@@ -99,7 +129,7 @@ export default function VocabularyInfo({
         <TooltipProvider>
           <div className="flex gap-3 text-rose-500 justify-center items-center">
             {/* Share */}
-            <Tooltip>
+            {/* <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setIsShare(!isShare)}
@@ -120,10 +150,10 @@ export default function VocabularyInfo({
               <TooltipContent className="text-sm font-medium rounded-md">
                 Chia sẻ bài học
               </TooltipContent>
-            </Tooltip>
+            </Tooltip> */}
 
             {/* Bookmark */}
-            <Tooltip>
+            {/* <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setBookmarked(!bookmarked)}
@@ -144,7 +174,7 @@ export default function VocabularyInfo({
               <TooltipContent className="text-sm font-medium rounded-md">
                 Lưu vào danh sách
               </TooltipContent>
-            </Tooltip>
+            </Tooltip> */}
 
             {/* Camera */}
             <Tooltip>
@@ -238,22 +268,39 @@ export default function VocabularyInfo({
         <Button
           size={"lg"}
           onClick={handleContextToggle}
+          // Vô hiệu hóa button khi đang tải
+          disabled={isLoadingContext}
           className="px-6 py-2 rounded-lg bg-[#C73B3B] text-white font-medium hover:bg-[#e85b5b] transition-colors text-lg flex items-center gap-2"
         >
-          <Sparkles className="w-5 h-5" />
-          {showContext ? "Không xem ngữ cảnh" : "Thêm ngữ cảnh"}
+          {/* * Hiển thị icon loading nếu đang tải,
+           * ngược lại hiển thị icon Sparkles
+           */}
+          {isLoadingContext ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Sparkles className="w-5 h-5" />
+          )}
+
+          {/* * Hiển thị văn bản "Đang tải..." nếu đang loading,
+           * ngược lại hiển thị văn bản dựa trên 'showContext'
+           */}
+          {isLoadingContext
+            ? "Đang tải..."
+            : showContext
+            ? "Không xem ngữ cảnh"
+            : "Thêm ngữ cảnh"}
         </Button>
       </div>
 
       {/* Context Section */}
       {showContext && (
         <div className="mt-6 bg-rose-50 border border-rose-200 rounded-lg p-4 text-gray-700 text-base">
-          {loadingContext ? (
+          {isLoadingContext ? (
             <div className="animate-pulse text-gray-400">
               Đang tải ngữ cảnh...
             </div>
-          ) : context ? (
-            <p>{context}</p>
+          ) : contextText ? (
+            <MarkdownRenderer content={contextText}></MarkdownRenderer>
           ) : (
             <p className="italic text-gray-500">
               Không có ngữ cảnh cho từ này.
