@@ -1,13 +1,13 @@
 // store/chatStore.ts
 import { create } from "zustand";
 
-export interface Message {
+export type Message = {
   role: "user" | "assistant";
   content: string;
-  video?: string;
-  quiz?: string;
-  syllabus?: string;
-}
+  video?: string | null; // Must be optional
+  quiz?: string | null; // Must be optional
+  syllabus?: string | null; // Must be optional
+};
 
 interface ChatSession {
   id: number;

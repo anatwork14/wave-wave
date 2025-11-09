@@ -378,7 +378,7 @@ export default function LessonPlayer({ lesson }: { lesson: Lesson }) {
   }
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto px-4 py-8">
+    <div className="space-y-8 w-[80%] mx-auto px-4 py-8">
       {/* (Header không đổi) */}
       <div className="text-center">
         <h2 className="text-4xl font-extrabold mb-3 bg-gradient-to-r from-[#f66868] to-rose-400 bg-clip-text text-transparent">

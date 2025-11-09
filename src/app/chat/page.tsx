@@ -84,25 +84,23 @@ export default function Page() {
     const userMessage: Message = { role: "user", content: input };
     const messageToSend = input;
 
-    // 1. Optimistically update UI with user message
+    // 1. Optimistically update UI
     if (currentChat) {
       addMessage(currentChat.id, userMessage);
     }
-    // We handle the new chat case later after we get the session_id
 
-    setInput(""); // Clear input immediately
+    setInput("");
     setTokenUsage((prev) => prev + Math.ceil(messageToSend.length / 4));
 
-    // 2. Set assistant to 'typing' status
+    // 2. Set assistant to 'typing'
     setAssistantTyping(true);
-    setAssistantMessageContent(""); // Clear any previous temporary content
+    setAssistantMessageContent("");
 
-    // Determine session ID for the backend call
     const sessionId = currentChat?.id || null;
     const isNewChat = !currentChat;
 
     try {
-      // 3. Send request to the FastAPI chat endpoint
+      // 3. Send request
       const response = await fetch("http://127.0.0.1:8000/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -115,64 +113,63 @@ export default function Page() {
 
       if (!response.ok) throw new Error("Agent response failed.");
 
-      const data = await response.json(); // { user_id, session_id, response }
+      const data = await response.json();
       const finalAgentContent = data.response.trim();
-      const quizRegex = /\[QuizID:([^\]]+)\]/;
-      const syllabusRegex = /\[SyllabusID:([^\]]+)\]/;
-      // This regex looks for a full URL ending in .mp4
-      const videoRegex = /(https?:\/\/[^\s]+\.mp4)/;
 
-      // 2. Search for matches
+      // --- Your regex and matching (this part is correct) ---
+      const quizRegex = "/[QuizID:([^]]+)]/";
+      const syllabusRegex = "/[SyllabusID:([^]]+)]/";
+      const videoRegex = "/(https?://[^s]+.mp4)/";
+
       const quizMatch = finalAgentContent.match(quizRegex);
       const syllabusMatch = finalAgentContent.match(syllabusRegex);
-      const videoMatch = finalAgentContent.match(videoRegex); // New
+      const videoMatch = finalAgentContent.match(videoRegex);
 
-      // 3. Update state if a match is found
+      // --- Also update local state (as you were doing) ---
       if (quizMatch && quizMatch[1]) {
-        const capturedId = quizMatch[1];
-        setCurrentQuizId(capturedId);
-        console.log("Captured QuizID:", capturedId);
+        setCurrentQuizId(quizMatch[1]);
+        console.log("Captured QuizID:", quizMatch[1]);
       }
       if (syllabusMatch && syllabusMatch[1]) {
-        const capturedId = syllabusMatch[1];
-        setCurrentSyllabusId(capturedId);
-        console.log("Captured SyllabusID:", capturedId);
+        setCurrentSyllabusId(syllabusMatch[1]);
+        console.log("Captured SyllabusID:", syllabusMatch[1]);
       }
-      // New logic for video
       if (videoMatch && videoMatch[1]) {
-        const capturedUrl = videoMatch[1];
-        setVideo(capturedUrl);
-        console.log("Captured Video URL:", capturedUrl);
+        setVideo(videoMatch[1]);
+        console.log("Captured Video URL:", videoMatch[1]);
       }
+
+      // ******** ⭐️ THE FIX IS HERE ⭐️ ********
+      // Create the message object WITH the captured data.
+      // We use (match && match[1]) to get the captured group, or null.
       const agentMessage: Message = {
         role: "assistant",
         content: finalAgentContent,
+        quiz: (quizMatch && quizMatch[1]) || null,
+        syllabus: (syllabusMatch && syllabusMatch[1]) || null,
+        video: (videoMatch && videoMatch[1]) || null,
       };
+      // *****************************************
 
-      // 4. Update store state with the final message and stop typing
-      setAssistantTyping(false); // Stop the typing indicator
-      setAssistantMessageContent(finalAgentContent); // Set the content for the typewriter effect
+      // 4. Update store state
+      setAssistantTyping(false);
+      setAssistantMessageContent(finalAgentContent);
 
-      // The TypewriterEffect component will now run its animation
-
-      // 5. Officially add the message to the chat history after the typing effect is done
-      // NOTE: For a smooth flow, the message is added immediately here. The ChatArea component
-      // is responsible for displaying the *last* assistant message using the Typewriter effect
-      // and only showing the TypingIndicator when `assistantTyping` is true.
-
+      // 5. Officially add the message to history
+      // (This now works because `agentMessage` has the data)
       if (isNewChat) {
         const newSessionData = {
           id: data.session_id,
           title: messageToSend.substring(0, 30) + "...",
           actor: "teacher_agent",
           time: new Date().toISOString(),
-          messages: [userMessage, agentMessage], // Include both messages
+          messages: [userMessage, agentMessage], // This now includes quiz/syllabus/video
         };
         setChatSessions([...chatSessions, newSessionData]);
         setCurrentChat(newSessionData);
       } else {
         if (agentMessage.content.length > 0) {
-          addMessage(data.session_id, agentMessage);
+          addMessage(data.session_id, agentMessage); // This now includes quiz/syllabus/video
         } else {
           addMessage(currentChat.id, {
             role: "assistant",
@@ -183,11 +180,9 @@ export default function Page() {
     } catch (error) {
       console.error("Error sending message:", error);
 
-      // Ensure typing indicator is removed on error
       setAssistantTyping(false);
       setAssistantMessageContent("");
 
-      // Revert optimistic update or add error message
       if (currentChat) {
         addMessage(currentChat.id, {
           role: "assistant",
@@ -216,48 +211,64 @@ export default function Page() {
       }
 
       const json = await res.json();
-      // Assuming the backend returns an array of Message objects
-      return json.events || [];
+      const events = json.events || [];
+      console.log("Fetched raw events:", json);
+
+      // ******** ⭐️ NEW LOGIC START ⭐️ ********
+      // Define the regex patterns
+      const quizRegex = /\[QuizID:([^\]]+)\]/;
+      const syllabusRegex = /\[SyllabusID:([^\]]+)\]/;
+      const videoRegex = /(https?:\/\/[^\s]+\.mp4)/;
+
+      // Map over the events and parse the content
+      const parsedEvents = events.map((message: Message) => {
+        // Only parse assistant messages that have content
+        if (message.role === "assistant" && message.content) {
+          const quizMatch = message.content.match(quizRegex);
+          const syllabusMatch = message.content.match(syllabusRegex);
+          const videoMatch = message.content.match(videoRegex);
+
+          // Return a new message object with the parsed data
+          return {
+            ...message,
+            quiz: (quizMatch && quizMatch[1]) || null,
+            syllabus: (syllabusMatch && syllabusMatch[1]) || null,
+            video: (videoMatch && videoMatch[1]) || null,
+          };
+        }
+        // Return user messages or empty messages as-is
+        return message;
+      });
+
+      // Return the newly parsed array
+      return parsedEvents;
+      // ******** ⭐️ NEW LOGIC END ⭐️ ********
     }
 
-    // Only run if a chat is selected AND its messages haven't been loaded yet.
-    // The safest dependency is just `currentChat` and you run the fetch once
-    // when a chat is selected (and its messages array is empty or short, depending on your logic).
-
-    // 🎯 FIX: Add a check to prevent fetching if messages are already there.
+    // Guard clause: (This is correct)
     if (
       !currentChat ||
       (currentChat.messages && currentChat.messages.length > 0)
     ) {
-      // If currentChat is null, or it already has messages, don't re-fetch.
       return;
     }
 
-    // Now call the fetch logic
     const session_id = String(currentChat.id);
-
-    // Use a self-executing async function inside useEffect
-    // The logic is wrapped in a cleanup-friendly way if you were fetching on every render,
-    // but here it's simple: just fetch when a new currentChat is set.
 
     const loadMessages = async () => {
       try {
+        // 'events' will now be the *parsed* array from fetchSessionEvents
         const events = await fetchSessionEvents("1", session_id);
 
-        // 🎯 THE KEY FIX: Replace all messages in one go
-        // This ensures currentChat changes only once, stopping the infinite loop.
+        // This now saves the messages *with* the quiz/syllabus/video data
         setCurrentChatMessages(currentChat.id, events);
-        console.log(events);
+        console.log("Saved parsed events to store:", events);
       } catch (err) {
         console.error("Failed to fetch sessions:", err);
-        // Optional: Handle error display to the user
       }
     };
 
     loadMessages();
-
-    // The dependency array should ONLY contain 'currentChat' to run once per chat selection.
-    // We remove 'addMessage' as it's no longer used, and 'setCurrentChatMessages' is stable from zustand.
   }, [currentChat, setCurrentChatMessages]);
 
   const handleModeSelect = (selected: ChatMode) => setMode(selected);
