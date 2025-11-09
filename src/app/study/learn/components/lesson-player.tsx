@@ -376,6 +376,7 @@ export default function LessonPlayer({ lesson }: { lesson: Lesson }) {
       </div>
     );
   }
+  // --- 1. Define state variables (This is the "inline" fix) ---
 
   return (
     <div className="space-y-8 w-[80%] mx-auto px-4 py-8">
@@ -409,17 +410,18 @@ export default function LessonPlayer({ lesson }: { lesson: Lesson }) {
           className="h-2 bg-rose-100 [&>div]:bg-[#f66868]"
         />
       </div>
-      <div className="w-full flex justify-center">
-        <div className="mt-1 w-fit rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 p-4 text-center shadow-sm flex flex-row gap-x-4 items-center">
-          <div className="text-xl">💡</div>
-          <div className="flex flex-col gap-y-1">
-            <p className="text-rose-700 font-medium text-lg">
-              Mẹo nhỏ: Hãy bật camera để tự kiểm tra bản thân nhé!
-            </p>
+      {phase == "introduction" && (
+        <div className="w-full flex justify-center">
+          <div className="mt-1 w-fit rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 p-4 text-center shadow-sm flex flex-row gap-x-4 items-center">
+            <div className="text-xl">💡</div>
+            <div className="flex flex-col gap-y-1">
+              <p className="text-rose-700 font-medium text-lg">
+                Mẹo nhỏ: Hãy bật camera để tự kiểm tra bản thân nhé!
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-
+      )}
       {/* === PHASE: INTRODUCTION === */}
       {phase === "introduction" && currentVocab && (
         <VocabularyInfo
@@ -440,9 +442,11 @@ export default function LessonPlayer({ lesson }: { lesson: Lesson }) {
                 <CardTitle className="text-lg font-semibold text-foreground">
                   {currentQuestion.question_text}
                 </CardTitle>
-                <CardDescription className="text-xs mt-0.5">
-                  Xem video và chọn đáp án đúng
-                </CardDescription>
+                {currentQuestion.video && (
+                  <CardDescription className="text-xs mt-0.5">
+                    Xem video và chọn đáp án đúng
+                  </CardDescription>
+                )}
               </div>
               <Badge className="bg-[#f66868]/10 text-[#f66868] border border-[#f66868]/30 text-[11px] py-0.5 px-2">
                 Kiểm Tra
@@ -460,8 +464,8 @@ export default function LessonPlayer({ lesson }: { lesson: Lesson }) {
                   loop
                   muted
                 />
-                <div className="absolute top-0 left-0 h-full w-16 bg-white z-10"></div>
-                <div className="absolute top-0 right-0 h-full w-16 bg-white z-10"></div>
+                <div className="absolute top-0 left-0 h-full w-48 bg-white z-10"></div>
+                <div className="absolute top-0 right-0 h-full w-48 bg-white z-10"></div>
               </div>
             )}
 
@@ -471,33 +475,51 @@ export default function LessonPlayer({ lesson }: { lesson: Lesson }) {
                   key={option.id}
                   onClick={() => handleQuizAnswer(index)}
                   disabled={showQuizResult}
-                  className={`group rounded-lg overflow-hidden border transition-all duration-300 ${
-                    selectedAnswer === index
+                  className={`group w-full rounded-lg overflow-hidden border transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed ${
+                    // This is the new, cleaned-up logic:
+                    showQuizResult && selectedAnswer === index // A. Results are SHOWN and this was the user's answer
                       ? option.is_correct
-                        ? "border-green-500 ring-1 ring-green-300"
-                        : "border-red-500 ring-1 ring-red-300"
-                      : "hover:border-[#f66868]/70"
+                        ? "border-green-500 ring-2 ring-green-500/50" // A1. It was CORRECT (green)
+                        : "border-red-500 ring-2 ring-red-500/50" // A2. It was INCORRECT (red)
+                      : !showQuizResult && selectedAnswer === index // B. Results NOT shown, but this is selected
+                      ? "border-[#f66868] ring-2 ring-[#f66868]/50" // B1. Neutral "selected" state (pink)
+                      : "border-gray-200 hover:border-[#f66868]/70" // C. Idle / unselected state (gray)
                   }`}
                 >
-                  <div className="relative">
-                    {selectedAnswer === index && showQuizResult && (
-                      <div
-                        className={`absolute inset-0 flex items-center justify-center ${
-                          option.is_correct
-                            ? "bg-green-500/20"
-                            : "bg-red-500/20"
-                        }`}
-                      >
-                        {option.is_correct ? (
-                          <CheckCircle2 className="w-8 h-8 text-green-600" />
-                        ) : (
-                          <XCircle className="w-8 h-8 text-red-600" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 bg-white border-t text-sm font-medium text-center">
-                    {option.option_text}
+                  {/* This text block now also changes color based on the state */}
+                  <div
+                    className={`p-3 bg-white border-t text-sm font-medium text-center transition-all duration-300 ${
+                      // Logic for text color
+                      showQuizResult && selectedAnswer === index
+                        ? option.is_correct
+                          ? "text-green-700 font-bold" // Correct answer, selected
+                          : "text-red-700 font-bold" // Incorrect answer, selected
+                        : !showQuizResult && selectedAnswer === index
+                        ? "text-[#f66868] font-bold" // Neutral "selected" state
+                        : "text-gray-700 group-hover:text-[#f66868]" // Idle state
+                    }`}
+                  >
+                    {/* FIX: Added "flex items-center justify-center gap-2"
+    This centers the content and adds space between the icon and text.
+  */}
+                    <div className="flex items-center justify-center gap-2">
+                      {/* FIX: Wrapped the icon logic in a check.
+      This ensures icons ONLY show up for the answer the user selected,
+      once the results are shown.
+    */}
+                      {showQuizResult && selectedAnswer === index && (
+                        <>
+                          {option.is_correct ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-600" />
+                          )}
+                        </>
+                      )}
+
+                      {/* This text now renders correctly with or without an icon */}
+                      <span>{option.option_text}</span>
+                    </div>
                   </div>
                 </button>
               ))}
@@ -527,8 +549,8 @@ export default function LessonPlayer({ lesson }: { lesson: Lesson }) {
 
       {/* 7. THÊM: Giao diện cho màn hình SUMMARY */}
       {phase === "summary" && (
-        <Card className="overflow-hidden border-2 border-rose-100 shadow-sm text-center">
-          <CardHeader className="bg-gradient-to-br from-rose-50 to-white pb-4">
+        <Card className="overflow-hidden border-2 border-rose-100 shadow-sm text-center pb-0">
+          <CardHeader className="bg-gradient-to-br from-rose-50 to-white py-6">
             <Trophy className="w-16 h-16 text-[#f66868] mx-auto" />
             <CardTitle className="text-3xl font-bold text-[#f66868] pt-2">
               Chúc Mừng Hoàn Thành!

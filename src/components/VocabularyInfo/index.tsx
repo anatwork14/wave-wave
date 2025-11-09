@@ -25,7 +25,10 @@ import MarkdownRenderer from "../MarkdownRender";
 
 // --- Cấu hình WebSocket ---
 const WEBSOCKET_URL = "ws://localhost:8001/ws/predict-stream/";
-const FRAME_INTERVAL_MS = 100;
+
+// --- THAY ĐỔI 1: CẬP NHẬT LÊN 20 FPS ---
+// 1000ms / 20 FPS = 50ms
+const FRAME_INTERVAL_MS = 50;
 // ---
 
 interface VocabularyInfoProps {
@@ -71,7 +74,7 @@ export default function VocabularyInfo({
   const wsRef = useRef<WebSocket | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // --- HÀM GỬI KHUNG HÌNH (ĐÃ SỬA LỖI KHUNG HÌNH RỖNG) ---
+  // --- HÀM GỬI KHUNG HÌNH (GIỮ NGUYÊN) ---
   const sendFrame = () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.log("WebSocket not ready, state:", wsRef.current?.readyState);
@@ -120,73 +123,112 @@ export default function VocabularyInfo({
   };
   // ---
 
-  // --- BẮT ĐẦU SỬA LỖI VÒNG LẶP ---
-
-  // 1. Tạo một hàm dọn dẹp (cleanup) ổn định
-  // Hàm này KHÔNG có dependency (mảng rỗng []), vì vậy nó sẽ không bao giờ
-  // thay đổi và an toàn để sử dụng trong useEffect.
+  // --- HÀM DỌN DẸP (GIỮ NGUYÊN) ---
   const cleanupCamera = useCallback(() => {
     console.log("Đang chạy dọn dẹp camera...");
 
-    // Dừng gửi khung hình (an toàn khi gọi dù là null)
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    // Đóng WebSocket (an toàn khi gọi dù là null)
     if (wsRef.current) {
-      wsRef.current.onclose = null; // Vô hiệu hóa trình xử lý
+      wsRef.current.onclose = null;
       wsRef.current.onerror = null;
       wsRef.current.close();
       wsRef.current = null;
     }
-    // Dừng stream camera (an toàn khi gọi dù là null)
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
 
-    // Dọn dẹp state - Sử dụng "functional update"
-    // Bằng cách này, hàm không cần `isCameraActive` làm dependency
     setIsCameraActive((isActive) => {
-      // Chỉ cập nhật các state khác NẾU camera thực sự đang BẬT
       if (isActive) {
         setPrediction(null);
         setError(null);
-        // setFramesCollected(0); // Bất kỳ state nào khác bạn có
+        setFramesCollected(0);
       }
-      return false; // Luôn đảm bảo state cuối cùng là false
+      return false;
     });
   }, []);
-  // 2. Sửa đổi handleCameraAccess
-  // Nó vẫn cần `isCameraActive` để quyết định MỞ hay TẮT.
+  // ---
+
+  // --- THAY ĐỔI 2: KÍCH HOẠT LẠI WEBSOCKET KHI MỞ CAMERA ---
   const handleCameraAccess = useCallback(async () => {
     if (isCameraActive) {
       // --- Logic TẮT (GIỮ NGUYÊN) ---
       console.log("Đang TẮT camera (do người dùng nhấp)...");
-      cleanupCamera(); // <-- Chỉ cần gọi hàm dọn dẹp
+      cleanupCamera();
     } else {
-      // --- Logic MỞ (ĐÃ SỬA) ---
-      console.log("Đang MỞ camera...");
+      // --- Logic MỞ (ĐÃ KHÔI PHỤC) ---
+      console.log("Đang MỞ camera VÀ KẾT NỐI...");
       try {
         // 1. Lấy stream video
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
         });
-        // 2. LƯU stream vào ref
-        streamRef.current = stream;
+        streamRef.current = stream; // LƯU stream vào ref
 
-        // 3. Cập nhật state để re-render VÀ HIỂN THỊ <video>
-        setIsCameraActive(true);
-        setError(null);
+        // 2. KẾT NỐI WEBSOCKET
+        wsRef.current = new WebSocket(WEBSOCKET_URL);
+
+        // 3. Định nghĩa các trình xử lý
+        wsRef.current.onopen = () => {
+          console.log("WebSocket đã kết nối!");
+          setIsCameraActive(true); // <-- Kích hoạt re-render để hiển thị video
+          setError(null);
+          // BẮT ĐẦU GỬI KHUNG HÌNH (với 20 FPS)
+          intervalRef.current = setInterval(sendFrame, FRAME_INTERVAL_MS);
+        };
+
+        wsRef.current.onmessage = (event) => {
+          console.log("WebSocket message received:", event.data);
+          try {
+            const data = JSON.parse(event.data);
+            console.log("Parsed data:", data);
+
+            if (data.status === "predicted") {
+              setPrediction({
+                label_text: data.label_text,
+                confidence: data.confidence,
+              });
+              setFramesCollected(0);
+            } else if (data.status === "collecting") {
+              console.log(
+                `Collecting frames: ${data.frames_collected}/${data.frames_needed}`
+              );
+              setFramesCollected(data.frames_collected);
+              setFramesNeeded(data.frames_needed);
+            } else if (data.status === "waiting") {
+              console.log("Waiting:", data.message);
+            } else if (data.status === "error") {
+              console.error("Backend error:", data.message);
+              setError(data.message);
+            }
+          } catch (err) {
+            console.error("Failed to parse WebSocket message:", err);
+          }
+        };
+
+        wsRef.current.onclose = () => {
+          console.log("WebSocket BỊ NGẮT (bất ngờ). Đang dọn dẹp.");
+          cleanupCamera();
+          setError("Kết nối đã mất. Vui lòng thử lại.");
+        };
+
+        wsRef.current.onerror = (err) => {
+          console.error("Lỗi WebSocket:", err);
+          setError("Lỗi kết nối. Backend có đang chạy không?");
+        };
       } catch (err) {
         console.error("Lỗi truy cập camera:", err);
         setError("Không thể truy cập camera. Vui lòng kiểm tra quyền.");
       }
     }
   }, [isCameraActive, cleanupCamera]);
+  // ---
 
-  // 3. Sửa đổi các useEffect
+  // --- CÁC useEffect (GIỮ NGUYÊN) ---
 
   // useEffect này CHỈ xử lý bookmark/share
   useEffect(() => {
@@ -205,41 +247,33 @@ export default function VocabularyInfo({
     setShowContext(false);
     setContextText("");
     setSessionId(null);
-
     console.log("Từ đã thay đổi, dọn dẹp camera...");
     cleanupCamera();
-  }, [word]); // <-- CHỈ phụ thuộc vào `word`.
-  // (Vì cleanupCamera giờ đã ổn định, bạn không cần thêm nó nữa,
-  // nhưng nếu thêm [word, cleanupCamera] thì vẫn ổn)
+  }, [word, cleanupCamera]); // <-- Sửa lại dependency (thêm cleanupCamera)
 
   // useEffect này CHỈ dọn dẹp khi component unmount
   useEffect(() => {
-    // Trả về hàm dọn dẹp
     return () => {
       console.log("Component unmount, đang dọn dẹp camera...");
       cleanupCamera();
     };
-  }, []);
+  }, [cleanupCamera]); // <-- Sửa lại dependency
+
+  // useEffect này XỬ LÝ MÀN HÌNH ĐEN (GIỮ NGUYÊN)
   useEffect(() => {
-    // Chỉ chạy nếu camera BẬT, videoRef tồn tại, và stream tồn tại
     if (isCameraActive && videoRef.current && streamRef.current) {
       console.log("Đang gán stream vào video element...");
-      // 4. GÁN stream vào phần tử <video>
       videoRef.current.srcObject = streamRef.current;
-
-      // 5. Chủ động YÊU CẦU video phát
       videoRef.current.play().catch((err) => {
-        // Bắt lỗi nếu trình duyệt chặn auto-play
         console.error("Video play() bị lỗi:", err);
       });
     }
   }, [isCameraActive]);
+  // ---
 
-  // --- KẾT THÚC SỬA LỖI VÒNG LẶP ---
-
-  // Handle context toggle
+  // Handle context toggle (GIỮ NGUYÊN)
   const handleContextToggle = async () => {
-    // ... (Logic xử lý context của bạn - không thay đổi) ...
+    // ... (Toàn bộ logic context của bạn không thay đổi) ...
     if (!showContext) {
       setIsLoadingContext(true);
       setContextText("");
@@ -274,6 +308,7 @@ export default function VocabularyInfo({
     }
   };
 
+  // --- PHẦN RETURN (JSX) (KHÔNG THAY ĐỔI) ---
   return (
     <div className="bg-white rounded-xl shadow-lg border-2 border-[#FF978E] overflow-hidden">
       {/* Header Section with Actions */}
