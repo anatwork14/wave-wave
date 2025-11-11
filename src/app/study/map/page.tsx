@@ -1,26 +1,27 @@
 "use client";
 
+import type React from "react";
+
 import { useEffect, useState } from "react";
 import {
   Play,
   CheckCircle2,
   Lock,
-  Clock,
   Users,
   BookOpen,
   Trophy,
   Star,
-  Sparkles,
-  SquareDashed,
+  SquareDashedBottom as SquareDashed,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Image from "next/image";
 import { useUserStore } from "@/store/useUserStore";
 import LearningSummary from "@/components/LearningSummary";
 import MedicalTerminologyCard from "@/components/MedicalTerminologyCard";
+import CurriculumModal from "@/components/curriculum-modal";
+import { useRouter } from "next/navigation";
 
 type LessonStatus = "completed" | "in-progress" | "upcoming" | "locked";
 
@@ -29,16 +30,15 @@ export interface MappedSyllabus {
   title: string;
   description: string;
   status: LessonStatus;
-  progress: number; // percentage from 0 to 100
+  progress: number;
   lesson_count: number;
   color: string;
   icon: React.ReactNode;
   link: string;
 }
 
-// ADDITION: This interface matches the data from your FastAPI backend
 export interface SyllabusInfo {
-  id: number; // Assuming ID is a number from the database
+  id: number;
   title: string;
   description: string;
   progress: number;
@@ -46,18 +46,13 @@ export interface SyllabusInfo {
   lesson_count: number;
 }
 
-// MODIFICATION: The hardcoded 'lessons' array is removed.
-// We will fetch this data from the API.
-
-// These are the static icons and colors your hardcoded array used.
-// We can use them to style the data we get from the backend.
 const ICONS = [
-  <Star className="w-5 h-5 text-white" />,
-  <CheckCircle2 className="w-5 h-5 text-white" />,
-  <Play className="w-5 h-5 text-white" />,
-  <Users className="w-5 h-5 text-white" />,
-  <BookOpen className="w-5 h-5 text-white" />,
-  <Lock className="w-5 h-5 text-white" />,
+  <Star key="star" className="w-5 h-5 text-white" />,
+  <CheckCircle2 key="check-circle" className="w-5 h-5 text-white" />,
+  <Play key="play" className="w-5 h-5 text-white" />,
+  <Users key="users" className="w-5 h-5 text-white" />,
+  <BookOpen key="book-open" className="w-5 h-5 text-white" />,
+  <Lock key="lock" className="w-5 h-5 text-white" />,
 ];
 
 const COLORS = [
@@ -74,6 +69,10 @@ export default function MapPage() {
   const [syllabuses, setSyllabuses] = useState<MappedSyllabus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Added modal state
+  const [isSubmitting, setIsSubmitting] = useState(false); // Added submission state
+  const router = useRouter(); // ⭐️ Hook for navigation
+
   useEffect(() => {
     const fetchSyllabuses = async () => {
       try {
@@ -87,15 +86,10 @@ export default function MapPage() {
 
         const data: { syllabuses: SyllabusInfo[] } = await response.json();
 
-        // --- ADD THIS LINE ---
-        // Sort the array by 'id' (ascending) before you map it
         const sortedSyllabuses = data.syllabuses.sort((a, b) => a.id - b.id);
-        // ---------------------
 
-        // Now, map the *sorted* array
         const mapped_syllabus: MappedSyllabus[] = sortedSyllabuses.map(
           (syllabus, index) => {
-            // ... (rest of your mapping logic)
             return {
               id: syllabus.id.toString(),
               title: syllabus.title,
@@ -119,11 +113,136 @@ export default function MapPage() {
       }
     };
 
-    // ... (rest of your useEffect, assuming you have a user check)
+    const fetchUserPreference = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/preferences/?user_id=${user?.id}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch data from server");
+        }
+
+        const data: { syllabuses: SyllabusInfo[] } = await response.json();
+
+        const sortedSyllabuses = data.syllabuses.sort((a, b) => a.id - b.id);
+
+        const mapped_syllabus: MappedSyllabus[] = sortedSyllabuses.map(
+          (syllabus, index) => {
+            return {
+              id: syllabus.id.toString(),
+              title: syllabus.title,
+              description: syllabus.description,
+              progress: syllabus.progress,
+              status: syllabus.status as LessonStatus,
+              color: COLORS[index % COLORS.length],
+              lesson_count: syllabus.lesson_count,
+              icon: ICONS[index % ICONS.length],
+              link: `/study/learn/syllabus/${syllabus.id}`,
+            };
+          }
+        );
+
+        setSyllabuses(mapped_syllabus);
+        setError(null);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     if (user?.id) {
       fetchSyllabuses();
     }
-  }, [user?.id]); // Make sure to add user.id as a dependency
+  }, [user?.id]);
+
+  const handleCurriculumSubmit = async (formData: {
+    target: string;
+    freetime: string;
+    schedule: string;
+    hope: string;
+    skill: number;
+  }) => {
+    setIsSubmitting(true);
+
+    try {
+      // 1️⃣ Step 1: Save user preferences
+      const saveRes = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/preferences`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: user?.id,
+            learning_goal: formData.target,
+            available_time: formData.freetime,
+            schedule: formData.schedule,
+            expectations: formData.hope,
+            skill: formData.skill,
+          }),
+        }
+      );
+
+      if (!saveRes.ok)
+        throw new Error("Failed to save user learning preference");
+
+      // 2️⃣ Step 2: Build AI Query (Vietnamese version)
+      const aiQuery = `Dựa trên các yêu cầu sau, hãy tạo một giáo trình học cá nhân hoá phù hợp:
+- Mục tiêu học tập: ${formData.target}
+- Thời gian rảnh có thể học: ${formData.freetime}
+- Lịch học mong muốn: ${formData.schedule}
+- Kỳ vọng khi hoàn thành khoá học: ${formData.hope}
+- Trình độ kỹ năng hiện tại: ${formData.skill}
+
+Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, bao gồm các bài học cụ thể và các mốc tiến độ quan trọng.`;
+
+      // 3️⃣ Step 3: Send to AI backend
+      const aiRes = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/generate-curriculum`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: user?.id,
+            query: aiQuery,
+          }),
+        }
+      );
+
+      if (!aiRes.ok) {
+        throw new Error("Failed to generate AI curriculum");
+      }
+
+      const aiResult = await aiRes.json();
+      console.log("🎯 AI Curriculum:", aiResult);
+
+      // 4️⃣ Step 4: Extract SyllabusID from response
+      const responseText = aiResult.response || "";
+      const syllabusMatch = responseText.match(/\[SyllabusID:(\d+)\]/i);
+
+      if (syllabusMatch && syllabusMatch[1]) {
+        const syllabusId = syllabusMatch[1];
+        console.log(`✅ Extracted SyllabusID: ${syllabusId}`);
+
+        setIsModalOpen(false);
+        alert("🎓 Giáo trình cá nhân hoá đã được tạo thành công!");
+        router.push(`/study/learn/syllabus/${syllabusId}`);
+      } else {
+        console.warn(
+          "⚠️ Không tìm thấy SyllabusID trong phản hồi AI:",
+          responseText
+        );
+        alert("❌ Có lỗi xảy ra khi tạo giáo trình. Vui lòng thử lại.");
+      }
+    } catch (err) {
+      console.error("Error submitting curriculum form:", err);
+      alert("❌ Có lỗi xảy ra. Vui lòng thử lại.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const completedCount = syllabuses.filter(
     (l) => l.status === "completed"
   ).length;
@@ -160,16 +279,22 @@ export default function MapPage() {
                     className={`absolute left-1/2 top-6 -ml-4 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center z-10 bg-[#F66868]`}
                   >
                     {syllabus.status === "completed" && (
-                      <CheckCircle2 className="w-4 h-4 text-white" />
+                      <CheckCircle2
+                        key="completed"
+                        className="w-4 h-4 text-white"
+                      />
                     )}
                     {syllabus.status === "in-progress" && (
-                      <Play className="w-4 h-4 text-white" />
+                      <Play key="in-progress" className="w-4 h-4 text-white" />
                     )}
                     {syllabus.status === "upcoming" && (
-                      <SquareDashed className="w-4 h-4 text-white" />
+                      <SquareDashed
+                        key="upcoming"
+                        className="w-4 h-4 text-white"
+                      />
                     )}
                     {syllabus.status === "locked" && (
-                      <Lock className="w-3 h-3 text-white" />
+                      <Lock key="locked" className="w-3 h-3 text-white" />
                     )}
                   </div>
 
@@ -254,12 +379,13 @@ export default function MapPage() {
               </li>
             </ul>
 
-            <div className="flex justify-center mt-1">
+            <div className="flex justify-center mt-4">
               <Button
                 size="lg"
                 className="bg-[#F66868] text-xl hover:bg-[#e25757] text-white px-5 py-2 rounded-xl shadow-md transition-all"
+                onClick={() => setIsModalOpen(true)} // Open modal
               >
-                🤖 Gợi ý giáo trình cá nhân hoá
+                🤖 Tạo giáo trình cá nhân hoá
               </Button>
             </div>
           </Card>
@@ -285,7 +411,7 @@ export default function MapPage() {
                 </div>
 
                 {/* Thông tin chi tiết */}
-                <div className="flex flex-row  items-center justify-between">
+                <div className="flex flex-row items-center justify-between">
                   <p className="text-sm text-gray-700 text-center">
                     🎯 <span className="font-semibold">{completedCount}</span> /{" "}
                     <span className="font-semibold">{totalCount}</span>
@@ -294,7 +420,7 @@ export default function MapPage() {
                   <div className="flex justify-center">
                     <Button
                       variant="outline"
-                      className="border-[#F66868]/40 text-[#F66868] hover:bg-[#F66868] hover:text-white transition-all duration-300"
+                      className="border-[#F66868]/40 text-[#F66868] hover:bg-[#F66868] hover:text-white transition-all duration-300 bg-transparent"
                     >
                       Xem lộ trình chi tiết
                     </Button>
@@ -315,6 +441,13 @@ export default function MapPage() {
           </Card>
         </div>
       </div>
+
+      <CurriculumModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCurriculumSubmit}
+        isLoading={isSubmitting}
+      />
     </div>
   );
 }

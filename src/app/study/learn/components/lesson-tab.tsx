@@ -1,16 +1,20 @@
 "use client";
 
-// 1. Import useEffect and define the Lesson type
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, Play, CheckCircle2 } from "lucide-react";
+import {
+  Play,
+  CheckCircle2,
+  BookOpen,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 import LessonPlayer from "./lesson-player";
 import ProgressSidebar from "./progress-sidebar";
 import { useUserStore } from "@/store/useUserStore";
+import { SyllabusInfo } from "../../map/page";
 
-// 2. Define the Lesson type based on your hardcoded data
-// (This should match what your API returns)
 type LessonStatus = "complete" | "in-progress" | "not_start";
 
 interface Lesson {
@@ -22,193 +26,247 @@ interface Lesson {
   level: "Cơ bản";
 }
 
-// 3. Fix the props signature
-// It must be ({ syllabusId }: { ... })
 export default function LessonTab({
-  syllabusId,
+  syllabus,
 }: {
-  syllabusId: string | null;
+  syllabus: SyllabusInfo | undefined;
 }) {
-  // 4. Add state for fetched lessons and loading
   const { user } = useUserStore();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState<number | null>(null);
 
-  // 5. Add useEffect to fetch lessons when syllabusId changes
   useEffect(() => {
-    // Don't fetch if no syllabus is selected
-    if (!syllabusId) {
+    if (!syllabus?.id || !user?.id) {
+      setLessons([]);
       setIsLoading(false);
-      setLessons([]); // Clear any previous lessons
       return;
     }
 
     const fetchLessons = async () => {
-      setIsLoading(true);
-      setSelectedLesson(null); // Clear selection when changing syllabus
       try {
-        // Fetch lessons for the specific syllabus
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/syllabuses/${syllabusId}/lessons?user_id=${user?.id}` // <-- TEMP user_id=1 for testing
+        setIsLoading(true);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/syllabuses/${syllabus.id}/lessons?user_id=${user.id}`
         );
-        if (!response.ok) {
-          throw new Error("Failed to fetch lessons");
-        }
-        // Assuming API returns { lessons: [...] }
-        const data: { lessons: Lesson[] } = await response.json();
+        if (!res.ok) throw new Error("Failed to fetch lessons");
+        const data: { lessons: Lesson[] } = await res.json();
         setLessons(data.lessons || []);
-      } catch (error) {
-        console.error(error);
-        setLessons([]); // Clear on error
+      } catch (e) {
+        console.error(e);
+        setLessons([]);
       } finally {
         setIsLoading(false);
+        setSelectedLesson(null);
       }
     };
 
     fetchLessons();
-  }, [syllabusId]); // The crucial dependency
+  }, [syllabus?.id, user?.id]);
 
-  // 6. Find the lesson object to pass to the player
   const lessonToPlay = lessons.find((l) => l.id === selectedLesson);
 
-  if (selectedLesson !== null && lessonToPlay) {
+  if (selectedLesson && lessonToPlay) {
     return (
       <div className="space-y-6">
         <Button
           variant="outline"
           onClick={() => setSelectedLesson(null)}
-          className="mb-4 border border-[#f66868] text-[#f66868] hover:text-[#f66868] hover:bg-rose-100"
+          className="mb-4 border-2 border-[#f66868] text-[#f66868] hover:text-white hover:bg-[#f66868] transition-all duration-300 font-semibold shadow-sm"
         >
           ← Quay Lại Danh Sách
         </Button>
-        {/* 7. Pass the selected lesson object to the player */}
         <LessonPlayer lesson={lessonToPlay} />
       </div>
     );
   }
 
-  // 8. Add Loading and Empty States
   if (isLoading) {
     return (
-      <div className="text-center text-gray-500 py-10">Đang tải bài học...</div>
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-rose-200 border-t-[#f66868] rounded-full animate-spin"></div>
+          <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-[#f66868]" />
+        </div>
+        <p className="mt-6 text-gray-600 font-medium text-lg">
+          Đang tải bài học...
+        </p>
+      </div>
     );
   }
 
   if (lessons.length === 0) {
     return (
-      <div className="text-center text-gray-500 py-10">
-        Không tìm thấy bài học nào cho chủ đề này.
+      <div className="flex flex-col items-center justify-center py-20 px-4">
+        <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-3xl p-12 text-center max-w-md">
+          <BookOpen className="h-16 w-16 text-[#f66868]/60 mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-gray-800 mb-2">
+            Chưa có bài học
+          </h3>
+          <p className="text-gray-600">
+            Không tìm thấy bài học nào cho chủ đề này.
+          </p>
+        </div>
       </div>
     );
   }
 
-  // --- Main Return (Lesson List) ---
+  const completed = lessons.filter(
+    (l) => l.lesson_status === "complete"
+  ).length;
+  const progress = (completed / lessons.length) * 100;
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold text-[#f66868] mb-2">Bài Học</h2>
-          <p className="text-[#f66868]">Học bài theo cách lộ trình của bạn</p>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="lg:col-span-2 space-y-8">
+        {/* Progress Header */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#f66868] via-[#ff7b7b] to-[#ff8f8f] p-8 text-white shadow-xl">
+          <div className="relative z-10">
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-4xl font-bold mb-3">Bài Học</h2>
+                <p className="text-white/90 text-lg font-medium">
+                  Học bài theo cách lộ trình của bạn
+                </p>
+              </div>
+              <div className="bg-white/20 rounded-2xl px-6 py-4 text-center border border-white/30">
+                <div className="text-3xl font-bold">
+                  {completed}/{lessons.length}
+                </div>
+                <div className="text-sm text-white/90 mt-1">Hoàn thành</div>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mt-6">
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-semibold text-white/90">
+                  Tiến độ học tập
+                </span>
+                <span className="text-sm font-bold">
+                  {Math.round(progress)}%
+                </span>
+              </div>
+              <div className="h-3 bg-white/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="grid gap-5 md:grid-cols-2">
-          {/* 9. Map over the 'lessons' state variable (not the hardcoded one) */}
-          {lessons.map((lesson) => (
-            <Card
-              key={lesson.id}
-              className={`overflow-hidden transition-all duration-500 rounded-2xl border border-rose-100 hover:border-[#F66868]/60 ${
-                lesson.lesson_status == "complete" &&
-                "border-green-200 hover:border-green-300"
-              } hover:shadow-[0_0_12px_#F66868]/20`}
-            >
-              {/* Header */}
-              <CardHeader className="">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle
-                      className={`text-lg font-semibold text-[#f66868] ${
-                        lesson.lesson_status == "complete" && "text-green-500"
-                      }`}
-                    >
-                      {lesson.title}
-                    </CardTitle>
-                    <p
-                      className={`text-sm ${
-                        lesson.level == "Cơ bản"
-                          ? "text-[#f66868]"
-                          : lesson.level == "Nâng cao"
-                          ? "text-yellow-500"
-                          : ""
-                      } mt-1`}
-                    >
-                      {lesson.description}
-                    </p>
+
+        {/* Lessons Grid */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {lessons.map((lesson, index) => {
+            const isComplete = lesson.lesson_status === "complete";
+            const isPlayable =
+              lesson.lesson_status === "in-progress" ||
+              lesson.lesson_status === "not_start";
+
+            return (
+              <Card
+                key={lesson.id}
+                onClick={() => setSelectedLesson(lesson.id)}
+                className={`group relative overflow-hidden rounded-3xl border-2 transition-all duration-500 hover:scale-[1.02] cursor-pointer 
+                  ${
+                    isComplete
+                      ? "border-emerald-200 hover:border-emerald-400 hover:shadow-[0_8px_30px_rgb(16,185,129,0.15)]"
+                      : "border-rose-100 hover:border-[#F66868] hover:shadow-[0_8px_30px_rgba(246,104,104,0.15)]"
+                  }`}
+              >
+                {/* Hover Overlay */}
+                <div
+                  className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
+                    isComplete
+                      ? "bg-gradient-to-br from-emerald-50/50 to-green-50/50"
+                      : "bg-gradient-to-br from-rose-50/50 to-pink-50/50"
+                  }`}
+                />
+
+                <CardHeader className="pt-6 pb-4 relative z-10">
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <div
+                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-3 ${
+                          isComplete
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-rose-100 text-[#f66868]"
+                        }`}
+                      >
+                        <span>Bài {index + 1}</span>
+                        {lesson.lesson_status === "in-progress" && (
+                          <TrendingUp className="h-3 w-3" />
+                        )}
+                      </div>
+
+                      <CardTitle
+                        className={`text-xl font-bold leading-snug transition-colors ${
+                          isComplete
+                            ? "text-emerald-600 group-hover:text-emerald-700"
+                            : "text-gray-800 group-hover:text-[#f66868]"
+                        }`}
+                      >
+                        {lesson.title}
+                      </CardTitle>
+
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                        {lesson.description}
+                      </p>
+                    </div>
+
+                    {isComplete && (
+                      <CheckCircle2 className="h-8 w-8 text-emerald-500 drop-shadow-sm" />
+                    )}
                   </div>
+                </CardHeader>
 
-                  {lesson.lesson_status === "complete" && (
-                    <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  )}
-                </div>
-              </CardHeader>
-
-              {/* Content */}
-              <CardContent className="space-y-4">
-                {/* Level + Duration */}
-                <div className="flex items-center justify-between">
-                  <span
-                    className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                      lesson.level === "Cơ bản"
-                        ? "bg-[#F66868]/10 text-[#F66868]"
-                        : "bg-yellow-200 text-yellow-500"
-                    }`}
+                <CardContent className="space-y-4 pb-6 relative z-10">
+                  <Button
+                    className={`w-full h-12 rounded-xl text-sm font-bold shadow-md hover:shadow-xl transition-all duration-300
+                      ${
+                        isComplete
+                          ? "bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white"
+                          : isPlayable
+                          ? "bg-gradient-to-r from-[#F66868] to-[#ff7b7b] hover:from-[#f55555] hover:to-[#F66868] text-white"
+                          : "bg-gray-100 text-gray-500 cursor-not-allowed"
+                      }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedLesson(lesson.id);
+                    }}
                   >
-                    Cơ bản
-                  </span>
-                </div>
-
-                {/* Action Button */}
-                <Button
-                  className={`w-full text-sm font-semibold transition-all duration-300 rounded-xl
-    ${
-      lesson.lesson_status === "complete"
-        ? "text-white bg-green-500 hover:bg-green-600" // "Ôn Tập" style
-        : lesson.lesson_status === "in-progress" ||
-          lesson.lesson_status === "not_start"
-        ? "bg-[#F66868] hover:bg-[#F66868]/90 text-white" // "Tiếp Tục" and "Bắt đầu" style
-        : "bg-gray-100 text-gray-500 cursor-not-allowed" // "locked" style
-    }`}
-                  onClick={() => setSelectedLesson(lesson.id)}
-                >
-                  {/* Ôn Tập */}
-                  {lesson.lesson_status === "complete" && "Ôn Tập"}
-
-                  {/* Tiếp Tục */}
-                  {lesson.lesson_status === "in-progress" && (
-                    <>
-                      <Play className="h-4 w-4 mr-2" />
-                      Tiếp Tục
-                    </>
-                  )}
-
-                  {/* Bắt đầu */}
-                  {lesson.lesson_status === "not_start" && (
-                    <>
-                      <Play className="h-4 w-4 mr-2" />
-                      Bắt đầu
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                    {isComplete && (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Ôn Tập
+                      </>
+                    )}
+                    {lesson.lesson_status === "in-progress" && (
+                      <>
+                        <Play className="h-4 w-4 mr-2" />
+                        Tiếp Tục
+                      </>
+                    )}
+                    {lesson.lesson_status === "not_start" && (
+                      <>
+                        <Play className="h-4 w-4 mr-2" />
+                        Bắt Đầu
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
       <div className="lg:col-span-1">
         <div className="sticky top-24">
-          {/* 10. Pass the fetched lessons to the sidebar */}
           <ProgressSidebar
-            syllabusId={syllabusId as string}
+            syllabus={syllabus}
             lessons={lessons}
             selectedLessonId={selectedLesson ?? undefined}
             onSelectLesson={setSelectedLesson}

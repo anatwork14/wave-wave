@@ -35,12 +35,6 @@ export default function StudyPage({ params }: { params: { id: string } }) {
   );
   const [isLoadingSyllabus, setIsLoadingSyllabus] = useState(true);
 
-  // --- 2. GET THE ID FROM PARAMS ---
-  // This effect sets the user
-  useEffect(() => {
-    setUser(tempUser);
-  }, [setUser]);
-
   // This effect fetches data and sets the selected ID
   useEffect(() => {
     if (!user?.id) return;
@@ -170,7 +164,11 @@ export default function StudyPage({ params }: { params: { id: string } }) {
           className="w-full text-3xl"
         >
           <TabsContent value="lessons" className="space-y-6">
-            <LessonTab syllabusId={selectedSyllabusId as string} />
+            <LessonTab
+              syllabus={syllabuses.find(
+                (syllabus) => syllabus.id === Number(selectedSyllabusId)
+              )}
+            />
           </TabsContent>
 
           <TabsContent value="practice" className="space-y-6">

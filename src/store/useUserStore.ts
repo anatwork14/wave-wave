@@ -1,5 +1,9 @@
-import { create } from "zustand";
+// store/useUserStore.js
 
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware"; // 1. Import persist
+
+// Your User type (no changes needed)
 export type User = {
   id: string;
   name: string;
@@ -12,12 +16,18 @@ type UserState = {
   setUser: (user: User | null) => void;
 };
 
-export const useUserStore = create<UserState>((set) => ({
-  user: {
-    id: "1",
-    name: "Khanh An",
-    avatar: "/avatars/avatar-1.png",
-    email: "anatwork14@gmail.com",
-  },
-  setUser: (user) => set({ user }),
-}));
+// 2. Wrap your store creation with persist()
+export const useUserStore = create<UserState>()(
+  // <-- Note the extra ()
+  persist(
+    (set) => ({
+      user: null,
+      setUser: (user) => set({ user }),
+    }),
+    {
+      // 3. Configure persistence
+      name: "user-auth-storage", // This is the key in localStorage
+      storage: createJSONStorage(() => localStorage), // Use localStorage
+    }
+  )
+);

@@ -1,7 +1,9 @@
+// app/layout.js
 import { Geist, Geist_Mono, Baloo_Chettan_2 } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import AppProviders from "@/components/AppProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,11 +30,14 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${baloo.variable}`}
     >
       <body>
-        <header>
-          <Navigation />
-        </header>
-        {children}
-        <Footer />
+        {/* 👇 2. Wrap your content with the provider */}
+        <AppProviders>
+          <header>
+            <Navigation />
+          </header>
+          {children}
+          <Footer />
+        </AppProviders>
       </body>
     </html>
   );

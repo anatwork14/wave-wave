@@ -222,9 +222,29 @@ export default function LessonPlayer({ lesson }: { lesson: Lesson }) {
         await fetchData();
         setPhase("quiz");
       } else {
-        throw new Error(agentResponse.payload || "Agent không thể tạo quiz");
+        // --- 💡 START FIX ---
+        // Get the payload message from the agent
+        const payloadMessage =
+          agentResponse.payload || "Agent không thể tạo quiz";
+
+        // Check if the payload message contains your special success string
+        if (String(payloadMessage).includes("[QuizID:")) {
+          console.log(
+            "Quiz generation handled (e.g., already exists):",
+            payloadMessage
+          );
+
+          // This is not an error, so run the same success logic
+          await fetchData();
+          setPhase("quiz");
+        } else {
+          // This is a REAL agent error
+          throw new Error(payloadMessage);
+        }
+        // --- 💡 END FIX ---
       }
     } catch (err: any) {
+      // This will now only catch true errors
       setError(err.message);
     } finally {
       setIsGenerating(false);

@@ -17,13 +17,6 @@ import LessonTab from "../../components/lesson-tab";
 import { removeBrackets } from "@/lib/utils";
 import { SyllabusInfo } from "../../../map/page";
 
-const tempUser: User = {
-  id: "1",
-  name: "Khanh An",
-  email: "iamyasou00@gmail.com",
-  avatar: "/avatar.png",
-};
-
 // --- 1. CHANGE COMPONENT SIGNATURE ---
 // Accept 'params' which contains the { id: "2" } from the URL
 export default function StudyPage({
@@ -41,12 +34,12 @@ export default function StudyPage({
     urlSyllabusId
   );
   const [isLoadingSyllabus, setIsLoadingSyllabus] = useState(true);
+
   console.log("Selected Syllabus ID:", selectedSyllabusId);
   // This effect sets the user
   useEffect(() => {
-    setUser(tempUser);
     setSelectedSyllabusId(urlSyllabusId);
-  }, [setUser, urlSyllabusId]);
+  }, [urlSyllabusId]);
 
   // This effect fetches data and sets the selected ID
   useEffect(() => {
@@ -190,7 +183,11 @@ export default function StudyPage({
           className="w-full text-3xl"
         >
           <TabsContent value="lessons" className="space-y-6">
-            <LessonTab syllabusId={selectedSyllabusId} />
+            <LessonTab
+              syllabus={syllabuses.find(
+                (syllabus) => syllabus.id === Number(selectedSyllabusId)
+              )}
+            />
           </TabsContent>
 
           <TabsContent value="practice" className="space-y-6">
