@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/KhanhAn/Project_Sudo/wave-wave/src/app/study/layout.tsx"],"sourcesContent":["export default function RootLayout({\r\n  children,\r\n}: Readonly<{ children: React.ReactNode }>) {\r\n  return (\r\n    <html lang=\"vi\">\r\n      <body>\r\n        <div className=\"text-black\">\r\n          Hành trình học tập ngôn ngữ kí hiệu tại Wave Wave\r\n        </div>\r\n        {children}\r\n      </body>\r\n    </html>\r\n  );\r\n}\r\n"],"names":[],"mappings":";;;;;;AAAe,SAAS,WAAW,EACjC,QAAQ,EACgC;IACxC,qBACE,8QAAC;QAAK,MAAK;kBACT,cAAA,8QAAC;;8BACC,8QAAC;oBAAI,WAAU;8BAAa;;;;;;gBAG3B;;;;;;;;;;;;AAIT","debugId":null}}]
+}

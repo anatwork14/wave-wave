@@ -1,0 +1,12 @@
+{
+  "pages": {},
+  "app": {
+    "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page": [
+      "static/media/caa3a2e1cccd8315-s.p.853070df.woff2",
+      "static/media/797e433ab948586e-s.p.dbea232f.woff2",
+      "static/media/79655e2bad0607db-s.p.55175339.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pagesUsingSizeAdjust": false
+}

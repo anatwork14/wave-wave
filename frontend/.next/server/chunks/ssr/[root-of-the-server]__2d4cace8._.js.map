@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
+    {"offset": {"line": 15, "column": 0}, "map": {"version":3,"sources":["file:///C:/KhanhAn/Project_Sudo/wave-wave/src/app/study/page.tsx"],"sourcesContent":["export default function StudyPage() {\r\n  const { user } = useUserStore();\r\n  return <div className=\"w-full bg-black h-full\">alo</div>;\r\n}\r\n"],"names":[],"mappings":";;;;;;AAAe,SAAS;IACtB,MAAM,EAAE,IAAI,EAAE,GAAG;IACjB,qBAAO,8QAAC;QAAI,WAAU;kBAAyB;;;;;;AACjD","debugId":null}}]
+}

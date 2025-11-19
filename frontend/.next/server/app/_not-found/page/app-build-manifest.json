@@ -1,0 +1,23 @@
+{
+  "pages": {
+    "/_not-found/page": [
+      "static/chunks/2146a_next_dist_86941044._.js",
+      "static/chunks/Project_Sudo_wave-wave_src_app_favicon_ico_mjs_d4b0a3ae._.js",
+      "static/chunks/[root-of-the-server]__7aadc07f._.css",
+      "static/chunks/2146a_next_c06b458f._.js",
+      "static/chunks/2146a_react-icons_bdfe2ec6._.js",
+      "static/chunks/2146a_47aaa34b._.js",
+      "static/chunks/Project_Sudo_wave-wave_src_a83ac8cd._.js",
+      "static/chunks/Project_Sudo_wave-wave_src_app_layout_tsx_c25eb113._.js",
+      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_8e228d17._.js",
+      "static/chunks/2146a_next_dist_compiled_react-dom_8c5bf657._.js",
+      "static/chunks/2146a_next_dist_compiled_next-devtools_index_9a6f99cf.js",
+      "static/chunks/2146a_next_dist_compiled_1c9671c7._.js",
+      "static/chunks/2146a_next_dist_client_6957d1b0._.js",
+      "static/chunks/2146a_next_dist_ba7bc4ad._.js",
+      "static/chunks/2146a_@swc_helpers_cjs_ae07c8cb._.js",
+      "static/chunks/Project_Sudo_wave-wave_a0ff3932._.js",
+      "static/chunks/turbopack-Project_Sudo_wave-wave_7227bd74._.js"
+    ]
+  }
+}
