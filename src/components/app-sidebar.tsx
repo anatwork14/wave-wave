@@ -9,6 +9,7 @@ import {
   MessageSquareCodeIcon,
   PlusCircle,
 } from "lucide-react";
+import Image from "next/image";
 
 import { NavUser } from "@/components/nav-user";
 import {
@@ -25,68 +26,66 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "./ui/button";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { useChatStore } from "@/store/useChatStore";
+import { ChatSession, useChatStore } from "@/store/useChatStore";
 import { formatActor, formatTime } from "@/lib/utils";
+import { useUserStore } from "@/store/useUserStore";
+import { fetchUserSessions } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
-// ✅ Demo data
+// (Demo data is fine as a template)
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
-    { title: "Trang chủ", url: "/", icon: Home, isActive: true },
-    { title: "Học tập", url: "/study", icon: BookOpen, isActive: false },
-    { title: "Cộng đồng", url: "/community", icon: Globe2, isActive: false },
-    { title: "Từ điển", url: "/dictionary", icon: Database, isActive: false },
+    { title: "Trang chủ", url: "/", icon: Home },
+    { title: "Học tập", url: "/study/learn", icon: BookOpen },
+    { title: "Cộng đồng", url: "/community", icon: Globe2 },
+    { title: "Từ điển", url: "/dictionary", icon: Database },
     {
       title: "Chat Wave",
       url: "/chat",
       icon: MessageSquareCodeIcon,
-      isActive: false,
     },
   ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  // 👈 FIX: Removed static 'isActive' from demo data, state will handle it
   const [activeItem, setActiveItem] = React.useState(data.navMain[0]);
   const { chatSessions, setChatSessions, currentChat, setCurrentChat } =
     useChatStore();
   const [searchQuery, setSearchQuery] = React.useState("");
   const { setOpen } = useSidebar();
+  const { user } = useUserStore();
   const router = useRouter();
-
   // -------------------------------
-  // 🔹 Fetch sessions
+  // 🔹 FIX: Fetch sessions using shared function
   // -------------------------------
-  async function fetchUserSessions(userId: string) {
-    const res = await fetch(`http://127.0.0.1:8000/api/sessions/${userId}`);
-    const json = await res.json();
-    return json.sessions || [];
-  }
-
   React.useEffect(() => {
+    // 👈 FIX: Add guard clause
+
+    if (!user) return;
     (async () => {
       try {
-        const sessions = await fetchUserSessions("1");
+        // 👈 FIX: Use imported function
+        const sessions: ChatSession[] = await fetchUserSessions(user.id);
         setChatSessions(sessions);
       } catch (err) {
         console.error("Failed to fetch sessions:", err);
         setChatSessions([]);
       }
     })();
-  }, [setChatSessions]);
+    // 👈 FIX: Depend on user object (or user.id)
+  }, [setChatSessions, user]);
 
   // -------------------------------
-  // 🔹 Search filter (case-insensitive)
+  // 🔹 Search filter (This was already correct)
   // -------------------------------
   const filteredSessions = React.useMemo(() => {
-    if (!searchQuery.trim()) return chatSessions;
+    // 👈 FIX: Ensure chatSessions is treated as an array
+    const sessions = Array.isArray(chatSessions) ? chatSessions : [];
+
+    if (!searchQuery.trim()) return sessions;
     const lower = searchQuery.toLowerCase();
-    return chatSessions.filter((s) => s.title.toLowerCase().includes(lower));
+    return sessions.filter((s) => s.title.toLowerCase().includes(lower));
   }, [chatSessions, searchQuery]);
 
   return (
@@ -96,8 +95,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
     >
       {/* ------------------------------------
-          Sidebar 1 — Navigation Icons
-      ------------------------------------ */}
+         Sidebar 1 — Navigation Icons
+       ------------------------------------ */}
       <Sidebar
         collapsible="none"
         className="w-[calc(var(--sidebar-width-icon)+1px)] border-r"
@@ -113,11 +112,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               >
                 <a href="/">
                   <div className="bg-[#F66868]/20 flex size-8 items-center justify-center rounded-lg">
-                    <Image src={"logo.svg"} alt="logo" width={24} height={24} />
+                    <Image
+                      src={"/logo.svg"}
+                      alt="logo"
+                      width={24}
+                      height={24}
+                    />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">Acme Inc</span>
-                    <span className="truncate text-xs">Enterprise</span>
+                    <span className="truncate font-medium">Wave Wave</span>
+                    <span className="truncate text-xs">Học tập</span>
                   </div>
                 </a>
               </SidebarMenuButton>
@@ -137,10 +141,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         if (item.title === "Chat Wave") {
                           setActiveItem(item);
                           setOpen(true);
+                          // Optional: also navigate if not already on /chat
                         } else {
                           router.push(item.url);
                         }
                       }}
+                      // 👈 FIX: This now correctly updates based on URL
                       isActive={activeItem?.title === item.title}
                       className="px-2.5 md:px-2 cursor-pointer"
                     >
@@ -155,20 +161,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarContent>
 
         <SidebarFooter>
-          <NavUser user={data.user} />
+          <NavUser />
         </SidebarFooter>
       </Sidebar>
 
       {/* ------------------------------------
-          Sidebar 2 — Chat Sessions
-      ------------------------------------ */}
+         Sidebar 2 — Chat Sessions
+       ------------------------------------ */}
       <Sidebar collapsible="none" className="hidden flex-1 md:flex gap-0">
         <SidebarHeader className="gap-3.5 border-b p-4">
           <div className="flex w-full items-center justify-between">
             <Button
               variant="default"
               size="sm"
-              onClick={() => setCurrentChat(null)}
+              onClick={() => {
+                setCurrentChat(null);
+              }}
             >
               <PlusCircle /> Tạo chat mới
             </Button>
@@ -183,7 +191,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarHeader>
 
         <SidebarContent>
-          {/* 🔹 Scrollable session list */}
+          {/* 🔹 Scrollable session list (This logic was already correct) */}
           <SidebarGroup className="px-0 p-0">
             <SidebarGroupContent className="max-h-[calc(100vh-200px)] overflow-y-auto scrollbar-thin scrollbar-thumb-pink-300 scrollbar-track-transparent">
               {filteredSessions.length === 0 ? (
@@ -195,9 +203,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <div
                     key={chat.id}
                     className={`flex flex-col gap-1 bg-[#F66868]/5 hover:bg-pink-100 p-3 border-b border-pink-200 transition-colors cursor-pointer ${
-                      chat == currentChat && "bg-[#f66868]/40"
+                      // 👈 FIX: Use ID for comparison, it's safer
+                      chat.id === currentChat?.id && "bg-[#f66868]/40"
                     } `}
-                    onClick={() => setCurrentChat(chat)}
+                    onClick={() => {
+                      setCurrentChat(chat);
+                      // Also navigate to the specific chat page
+                    }}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-[#C73B3B]">

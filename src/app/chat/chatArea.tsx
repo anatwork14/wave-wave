@@ -38,7 +38,7 @@ const TypewriterEffect: React.FC<{ content: string }> = ({ content }) => {
     if (displayedContent.length < content.length) {
       const timeoutId = setTimeout(() => {
         setDisplayedContent(content.substring(0, displayedContent.length + 1));
-      }, 20);
+      }, 10);
 
       return () => clearTimeout(timeoutId);
     }
@@ -67,16 +67,17 @@ const MessageBubble: React.FC<Message & { isFinal: boolean }> = ({
 }) => {
   const isUser = role === "user";
   const router = useRouter(); // ⭐️ Hook for navigation
-  const { user } = useUserStore(); // 👈 Get the logged-in user
+  const { user, setIsMap } = useUserStore(); // 👈 Get the logged-in user
   const [isNavigating, setIsNavigating] = useState(false); // 👈 Add loading state
   // ⭐️ Handlers for button clicks
-  const handleQuizClick = (quizId: string) => {
+  const handleQuizClick = (quizId: number) => {
     // Example navigation route, update as needed
-    router.push(`/quiz/${quizId}`);
+    setIsMap(false);
+    router.push(`/study/learn`);
     console.log("Navigating to quiz:", quizId);
   };
 
-  const handleSyllabusClick = async (syllabusId: string) => {
+  const handleSyllabusClick = async (syllabusId: number) => {
     // Prevent double-clicks while the API call is in progress
     if (isNavigating) return;
 
@@ -86,6 +87,7 @@ const MessageBubble: React.FC<Message & { isFinal: boolean }> = ({
       // Optionally show an error toast to the user
       return;
     }
+    setIsMap(true);
 
     setIsNavigating(true);
 
@@ -99,7 +101,7 @@ const MessageBubble: React.FC<Message & { isFinal: boolean }> = ({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             user_id: user.id, // Get user_id from your store
-            syllabus_id: parseInt(syllabusId, 10), // Send the clicked syllabusId
+            syllabus_id: syllabusId, // Send the clicked syllabusId
           }),
         }
       );
@@ -164,7 +166,7 @@ const MessageBubble: React.FC<Message & { isFinal: boolean }> = ({
         <div className="mt-3 flex flex-col space-y-2">
           {quiz && (
             <button
-              onClick={() => handleQuizClick(quiz)}
+              onClick={() => handleQuizClick(Number(quiz))}
               className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg shadow font-semibold hover:bg-blue-600 transition-colors"
             >
               Làm bài Quiz
@@ -172,7 +174,7 @@ const MessageBubble: React.FC<Message & { isFinal: boolean }> = ({
           )}
           {syllabus && (
             <button
-              onClick={() => handleSyllabusClick(syllabus)}
+              onClick={() => handleSyllabusClick(Number(syllabus))}
               className="w-full px-4 py-2 bg-green-500 text-white rounded-lg shadow font-semibold hover:bg-green-600 transition-colors"
             >
               Xem Giáo Trình
@@ -204,13 +206,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages = [] }) => {
       block: "end",
     });
   };
-
+  const { setIsMap } = useUserStore();
   // ⭐️ Handlers for button clicks (needed for the special last-message render)
-  const handleQuizClick = (quizId: string) => {
-    router.push(`/quiz/${quizId}`);
+  const handleQuizClick = (quizId: number) => {
+    setIsMap(false);
+    router.push(`/study/learn`);
   };
 
-  const handleSyllabusClick = async (syllabusId: string) => {
+  const handleSyllabusClick = async (syllabusId: number) => {
     if (isNavigating) return;
 
     // Make sure we have a user to enroll
@@ -232,7 +235,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages = [] }) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             user_id: user.id, // Get user_id from your store
-            syllabus_id: parseInt(syllabusId, 10), // Send the clicked syllabusId
+            syllabus_id: syllabusId, // Send the clicked syllabusId
           }),
         }
       );
@@ -247,6 +250,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages = [] }) => {
       console.log(result.message); // e.g., "User 1 successfully enrolled..."
 
       // 2. If the API call is successful, navigate the user
+      setIsMap(true);
       console.log("Navigating to syllabus:", syllabusId);
       router.push(`/study/learn/syllabus/${syllabusId}`);
     } catch (error) {
@@ -298,7 +302,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages = [] }) => {
                   <div className="mt-3 flex flex-col space-y-2">
                     {message.quiz && (
                       <button
-                        onClick={() => handleQuizClick(message.quiz!)}
+                        onClick={() => handleQuizClick(Number(message.quiz!))}
                         className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg shadow font-semibold hover:bg-blue-600 transition-colors"
                       >
                         Làm bài Quiz
@@ -306,7 +310,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages = [] }) => {
                     )}
                     {message.syllabus && (
                       <button
-                        onClick={() => handleSyllabusClick(message.syllabus!)}
+                        onClick={() =>
+                          handleSyllabusClick(Number(message.syllabus!))
+                        }
                         className="w-full px-4 py-2 bg-green-500 text-white rounded-lg shadow font-semibold hover:bg-green-600 transition-colors"
                       >
                         Xem Giáo Trình

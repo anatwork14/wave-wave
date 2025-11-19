@@ -1,4 +1,3 @@
-// components/AppProviders.js
 "use client"; // 👈 This is the most important part
 
 import { GoogleOAuthProvider } from "@react-oauth/google";

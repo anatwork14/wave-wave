@@ -13,6 +13,12 @@ import {
   Trophy,
 } from "lucide-react";
 import { SyllabusInfo } from "../../map/page";
+import { useState } from "react";
+import ChoiceModal from "./choice-modal";
+import CurriculumModal from "@/components/curriculum-modal";
+import { useRouter } from "next/navigation";
+import { useUserStore } from "@/store/useUserStore";
+import ScheduleModal from "./schedule-modal";
 
 type LessonStatus = "complete" | "in-progress" | "not_start";
 
@@ -42,6 +48,13 @@ export default function ProgressSidebar({
   selectedLessonId,
   onSelectLesson,
 }: ProgressSidebarProps) {
+  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
+  const [isCurriculumModalOpen, setIsCurriculumModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Added submission state
+  const { user } = useUserStore();
+  const router = useRouter(); // ⭐️ Hook for navigation
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+
   // 5. CALCULATE progress dynamically from the 'lessons' prop
   const totalLessons = lessons.length;
   const completedCount = lessons.filter(
@@ -64,6 +77,128 @@ export default function ProgressSidebar({
 
   const vocabPercentage =
     totalVocabulary > 0 ? (vocabularyComplete / totalVocabulary) * 100 : 0;
+  const handleScheduleSubmit = async (formData: {
+    freetime: string;
+    schedule: string;
+  }) => {
+    setIsSubmitting(true);
+    try {
+      const aiQuery = `Dựa trên các yêu cầu sau, hãy tạo một giáo trình học cá nhân hoá phù hợp:
+- Thời gian rảnh có thể học: ${formData.freetime}
+- Lịch học mong muốn: ${formData.schedule}
+- Số bài học: ${totalLessons}
+- Số từ vựng: ${totalVocabulary}
+Vui lòng đề xuất một thời gian biểu học tập thật hợp lí.`;
+      const saveRes = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/preferences`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: user?.id,
+            query: aiQuery,
+          }),
+        }
+      );
+
+      if (!saveRes.ok) throw new Error("Failed to save schedule");
+
+      alert("✅ Lịch học đã được cập nhật thành công!");
+      setIsScheduleModalOpen(false);
+    } catch (err) {
+      console.error("Error saving schedule:", err);
+      alert("❌ Có lỗi xảy ra. Vui lòng thử lại.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  const handleCurriculumSubmit = async (formData: {
+    target: string;
+    freetime: string;
+    schedule: string;
+    hope: string;
+    skill: number;
+  }) => {
+    setIsSubmitting(true);
+
+    try {
+      // 1️⃣ Step 1: Save user preferences
+      const saveRes = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/preferences`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: user?.id,
+            learning_goal: formData.target,
+            available_time: formData.freetime,
+            schedule: formData.schedule,
+            expectations: formData.hope,
+            skill: formData.skill,
+          }),
+        }
+      );
+
+      if (!saveRes.ok)
+        throw new Error("Failed to save user learning preference");
+
+      // 2️⃣ Step 2: Build AI Query (Vietnamese version)
+      const aiQuery = `Dựa trên các yêu cầu sau, hãy tạo một giáo trình học cá nhân hoá phù hợp:
+- Mục tiêu học tập: ${formData.target}
+- Thời gian rảnh có thể học: ${formData.freetime}
+- Lịch học mong muốn: ${formData.schedule}
+- Kỳ vọng khi hoàn thành khoá học: ${formData.hope}
+- Trình độ kỹ năng hiện tại: ${formData.skill}
+
+Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, bao gồm các bài học cụ thể và các mốc tiến độ quan trọng.`;
+      console.log(aiQuery);
+      // 3️⃣ Step 3: Send to AI backend
+      const aiRes = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/generate-curriculum`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            // --- THIS IS THE FIX ---
+            user_id: String(user?.id), // Convert the number to a string
+            // -----------------------
+            query: aiQuery,
+          }),
+        }
+      );
+
+      if (!aiRes.ok) {
+        throw new Error("Failed to generate AI curriculum");
+      }
+
+      const aiResult = await aiRes.json();
+      console.log("🎯 AI Curriculum:", aiResult);
+
+      // 4️⃣ Step 4: Extract SyllabusID from response
+      const responseText = aiResult.response || "";
+      const syllabusMatch = responseText.match(/\[SyllabusID:(\d+)\]/i);
+
+      if (syllabusMatch && syllabusMatch[1]) {
+        const syllabusId = syllabusMatch[1];
+        console.log(`✅ Extracted SyllabusID: ${syllabusId}`);
+
+        setIsCurriculumModalOpen(false);
+        alert("🎓 Giáo trình cá nhân hoá đã được tạo thành công!");
+        router.push(`/study/learn/syllabus/${syllabusId}`);
+      } else {
+        console.warn(
+          "⚠️ Không tìm thấy SyllabusID trong phản hồi AI:",
+          responseText
+        );
+        alert("❌ Có lỗi xảy ra khi tạo giáo trình. Vui lòng thử lại.");
+      }
+    } catch (err) {
+      console.error("Error submitting curriculum form:", err);
+      alert("❌ Có lỗi xảy ra. Vui lòng thử lại.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
     <div className="space-y-4">
       {/* Progress Overview Card */}
@@ -75,28 +210,31 @@ export default function ProgressSidebar({
         <CardHeader className="relative z-10">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-2 bg-[#F66868]/10 rounded-xl">
-                  <GraduationCap className="h-5 w-5 text-[#F66868]" />
+              <div className="flex flex-row justify-between">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 bg-[#F66868]/10 rounded-xl">
+                    <GraduationCap className="h-5 w-5 text-[#F66868]" />
+                  </div>
+                  <span className="text-xs font-bold text-[#F66868]/70 uppercase tracking-wider">
+                    Giáo trình của bạn
+                  </span>
                 </div>
-                <span className="text-xs font-bold text-[#F66868]/70 uppercase tracking-wider">
-                  Giáo trình của bạn
-                </span>
+                {syllabus && Number(syllabus.id) > 11 && (
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="bg-[#F66868] text-white transition-all duration-300 rounded-sm shadow-sm hover:bg-[#F66868]/60 hover:text-white"
+                    onClick={() => setIsChoiceModalOpen(true)}
+                  >
+                    <SquarePen className="h-4 w-4 mr-1" />
+                    Điều chỉnh
+                  </Button>
+                )}
               </div>
-              <CardTitle className="text-2xl font-bold text-[#F66868] tracking-tight leading-tight">
+              <CardTitle className="text-2xl font-bold text-[#F66868]">
                 {syllabus?.title || "Chọn giáo trình"}
               </CardTitle>
             </div>
-            {syllabus && Number(syllabus.id) > 11 && (
-              <Button
-                size="sm"
-                variant="default"
-                className="bg-[#F66868] text-white transition-all duration-300 rounded-sm shadow-sm hover:bg-[#F66868]/60 hover:text-white"
-              >
-                <SquarePen className="h-4 w-4 mr-1" />
-                Điều chỉnh
-              </Button>
-            )}
           </div>
         </CardHeader>
 
@@ -245,6 +383,33 @@ export default function ProgressSidebar({
           </div>
         ))}
       </div>
+      <ChoiceModal
+        isOpen={isChoiceModalOpen}
+        onClose={() => setIsChoiceModalOpen(false)}
+        onCreateSyllabus={() => {
+          setIsChoiceModalOpen(false);
+          setIsCurriculumModalOpen(true);
+        }}
+        onSetupSchedule={() => {
+          setIsChoiceModalOpen(false);
+          setIsScheduleModalOpen(true);
+        }}
+      />
+      <CurriculumModal
+        isOpen={isCurriculumModalOpen}
+        onClose={() => setIsCurriculumModalOpen(false)}
+        onSubmit={handleCurriculumSubmit}
+        isLoading={isSubmitting}
+      />
+      <ScheduleModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        onSubmit={handleScheduleSubmit}
+        isLoading={isSubmitting}
+        userId={user?.id}
+        totalLessons={totalLessons}
+        totalVocabulary={totalVocabulary}
+      />
     </div>
   );
 }

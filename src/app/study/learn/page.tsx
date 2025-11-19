@@ -17,23 +17,18 @@ import LessonTab from "./components/lesson-tab";
 import { removeBrackets } from "@/lib/utils";
 import { SyllabusInfo } from "../map/page"; // (Assuming this path is correct)
 
-const tempUser: User = {
-  id: "1",
-  name: "Khanh An",
-  email: "iamyasou00@gmail.com",
-  avatar: "/avatar.png",
-};
 
 // --- 1. CHANGE COMPONENT SIGNATURE ---
 // Accept 'params' which contains the { id: "2" } from the URL
 export default function StudyPage({ params }: { params: { id: string } }) {
-  const { user, setUser } = useUserStore();
-  const [activeTab, setActiveTab] = useState("lessons");
+  const { user, setUser, isMap } = useUserStore();
+  const [activeTab, setActiveTab] = useState(isMap ? "lessons":"practice");
   const [syllabuses, setSyllabuses] = useState<SyllabusInfo[]>([]);
   const [selectedSyllabusId, setSelectedSyllabusId] = useState<string | null>(
     null
   );
   const [isLoadingSyllabus, setIsLoadingSyllabus] = useState(true);
+  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
 
   // This effect fetches data and sets the selected ID
   useEffect(() => {
@@ -42,9 +37,13 @@ export default function StudyPage({ params }: { params: { id: string } }) {
     const fetchSyllabuses = async () => {
       try {
         setIsLoadingSyllabus(true);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/syllabuses?user_id=${user.id}`
-        );
+        let url = `${process.env.NEXT_PUBLIC_SERVER_URL}/api/syllabuses?user_id=${user.id}`;
+
+        // 2. Only add the syllabus_id parameter IF it has a value
+        if (selectedSyllabusId) {
+          url += `&syllabus_id=${selectedSyllabusId}`;
+        }
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error("Failed to fetch syllabuses");
         }
@@ -127,27 +126,51 @@ export default function StudyPage({ params }: { params: { id: string } }) {
                 <div className="h-10 w-[280px] animate-pulse rounded-full bg-gray-200" />
               ) : (
                 <Select
-                  value={selectedSyllabusId || ""}
-                  onValueChange={setSelectedSyllabusId}
-                  defaultValue="Chọn chủ đề"
+                  // FIX 1: Safer 'value' prop.
+                  // This correctly handles `null`, `undefined`, or a value of `0`.
+                  value={selectedSyllabusId?.toString() ?? ""}
+                  // FIX 2: Ensure you set a Number in your state.
+                  // 'onValueChange' always returns a string.
+                  onValueChange={(value) =>
+                    setSelectedSyllabusId(Number(value))
+                  }
+
+                  // FIX 3: Removed redundant 'defaultValue'.
+                  // 'placeholder' in 'SelectValue' is the correct prop to use.
                 >
                   <SelectTrigger
                     className="w-[280px] gap-2 rounded-full border-2 
-                                       border-rose-200/60 bg-rose-50/70 text-rose-600 shadow-inner 
-                                       hover:bg-rose-100 focus:ring-rose-500"
+               border-rose-200/60 bg-rose-50/70 text-rose-600 shadow-inner 
+               hover:bg-rose-100 focus:ring-rose-500 text-left"
                   >
                     <SelectValue placeholder="Chọn chủ đề" />
                   </SelectTrigger>
                   <SelectContent>
-                    {syllabuses.map((syllabus) => (
-                      <SelectItem
-                        key={syllabus.id}
-                        value={syllabus.id.toString()}
-                        disabled={syllabus.status === "locked"}
-                      >
-                        {removeBrackets(syllabus.title)}
-                      </SelectItem>
-                    ))}
+                    {syllabuses.map((syllabus) => {
+                      // FIX 4: Your requested logic.
+                      // Check if the ID is outside the standard range (2-11).
+                      const isPersonalized =
+                        syllabus.id < 2 || syllabus.id > 11;
+
+                      return (
+                        <SelectItem
+                          key={syllabus.id}
+                          value={syllabus.id.toString()}
+                          disabled={syllabus.status === "locked"}
+                          // FIX 1: Simplified styling.
+                          // Use 'flex' and 'items-center'. 'ml-auto' on the child
+                          // is cleaner than 'justify-between' on the parent.
+                          className="flex justify-between"
+                        >
+                          <div>{removeBrackets(syllabus.title)}</div>
+                          {isPersonalized && (
+                            <div className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#f66868]/10 text-rose-600 border border-red-500/50">
+                              Cá nhân hoá
+                            </div>
+                          )}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               )}

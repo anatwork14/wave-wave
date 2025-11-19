@@ -48,16 +48,26 @@ export default function StudyPage({
     const fetchSyllabuses = async () => {
       try {
         setIsLoadingSyllabus(true);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/syllabuses?user_id=${user.id}`
-        );
+        let url = `${process.env.NEXT_PUBLIC_SERVER_URL}/api/syllabuses?user_id=${user.id}`;
+
+        // 2. Only add the syllabus_id parameter IF it has a value
+        if (selectedSyllabusId) {
+          url += `&syllabus_id=${selectedSyllabusId}`;
+        }
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error("Failed to fetch syllabuses");
         }
 
         const data: { syllabuses: SyllabusInfo[] } = await response.json();
-        const sortedSyllabuses = data.syllabuses.sort((a, b) => a.id - b.id);
+        const sortedSyllabuses = data.syllabuses.sort((a, b) => {
+          const isAIn2to11 = a.id >= 2 && a.id <= 11;
+          const isBIn2to11 = b.id >= 2 && b.id <= 11;
 
+          if (isAIn2to11 && !isBIn2to11) return 1; // a goes after b
+          if (!isAIn2to11 && isBIn2to11) return -1; // a goes before b
+          return a.id - b.id; // both in same group, sort ascending
+        });
         // --- 3. FIX: SET ALL SYLLABUSES FOR THE DROPDOWN ---
         // Do not filter the list, just set the full sorted list
         setSyllabuses(sortedSyllabuses);
@@ -146,27 +156,51 @@ export default function StudyPage({
                 <div className="h-10 w-[280px] animate-pulse rounded-full bg-gray-200" />
               ) : (
                 <Select
-                  value={selectedSyllabusId || ""}
-                  onValueChange={setSelectedSyllabusId}
+                  // FIX 1: Safer 'value' prop.
+                  // This correctly handles `null`, `undefined`, or a value of `0`.
+                  value={selectedSyllabusId?.toString() ?? ""}
+                  // FIX 2: Ensure you set a Number in your state.
+                  // 'onValueChange' always returns a string.
+                  onValueChange={(value) =>
+                    setSelectedSyllabusId(Number(value))
+                  }
+
+                  // FIX 3: Removed redundant 'defaultValue'.
+                  // 'placeholder' in 'SelectValue' is the correct prop to use.
                 >
                   <SelectTrigger
                     className="w-[280px] gap-2 rounded-full border-2 
-                                       border-rose-200/60 bg-rose-50/70 text-rose-600 shadow-inner 
-                                       hover:bg-rose-100 focus:ring-rose-500"
+               border-rose-200/60 bg-rose-50/70 text-rose-600 shadow-inner 
+               hover:bg-rose-100 focus:ring-rose-500 text-left"
                   >
                     <SelectValue placeholder="Chọn chủ đề" />
                   </SelectTrigger>
                   <SelectContent>
-                    {syllabuses.map((syllabus) => (
-                      <SelectItem
-                        key={syllabus.id}
-                        value={syllabus.id.toString()}
-                        disabled={syllabus.status === "locked"}
-                        className={`${syllabus.id} >= 12 ? 'bg-yellow-50/70 text-yellow-600' : ''}`}
-                      >
-                        {removeBrackets(syllabus.title)}
-                      </SelectItem>
-                    ))}
+                    {syllabuses.map((syllabus) => {
+                      // FIX 4: Your requested logic.
+                      // Check if the ID is outside the standard range (2-11).
+                      const isPersonalized =
+                        syllabus.id < 2 || syllabus.id > 11;
+
+                      return (
+                        <SelectItem
+                          key={syllabus.id}
+                          value={syllabus.id.toString()}
+                          disabled={syllabus.status === "locked"}
+                          // FIX 1: Simplified styling.
+                          // Use 'flex' and 'items-center'. 'ml-auto' on the child
+                          // is cleaner than 'justify-between' on the parent.
+                          className="flex justify-between"
+                        >
+                          <div>{removeBrackets(syllabus.title)}</div>
+                          {isPersonalized && (
+                            <div className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#f66868]/10 text-rose-600 border border-red-500/50">
+                              Cá nhân hoá
+                            </div>
+                          )}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               )}

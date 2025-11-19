@@ -16,9 +16,11 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const { prompt, setPrompt } = usePromptStore();
+  const router = useRouter();
   const sampleMarkdown = `
 # Vì sao tôi chọn học ngôn ngữ ký hiệu
 
@@ -32,8 +34,7 @@ Nhiều người nghĩ học ký hiệu là học *“tay làm gì để nói ch
 Tôi học được cách lắng nghe bằng mắt, diễn đạt bằng gương mặt, và đồng cảm bằng cả cơ thể. Nó không chỉ giúp tôi hiểu người khiếm thính, mà còn khiến tôi giao tiếp sâu sắc hơn với tất cả mọi người.
 `;
   const handleSubmit = () => {
-    console.log("User prompt:", prompt);
-    // You can later connect this to Gemini / FastAPI call
+    router.push("/chat");
   };
 
   return (

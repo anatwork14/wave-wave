@@ -9,8 +9,8 @@ export type Message = {
   syllabus?: string | null; // Must be optional
 };
 
-interface ChatSession {
-  id: number;
+export interface ChatSession {
+  id: string;
   title: string;
   actor: string;
   time: string;
@@ -26,8 +26,8 @@ interface ChatState {
   // -------------------------------------
   setChatSessions: (sessions: ChatSession[]) => void;
   setCurrentChat: (chat: ChatSession | null) => void;
-  setCurrentChatMessages: (chatId: number, messages: Message[]) => void;
-  addMessage: (chatId: number, message: Message) => void;
+  setCurrentChatMessages: (chatId: string, messages: Message[]) => void;
+  addMessage: (chatId: string, message: Message) => void;
   // --- New Actions for Typing/Streaming ---
   setAssistantTyping: (isTyping: boolean) => void;
   setAssistantMessageContent: (content: string) => void;

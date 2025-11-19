@@ -196,7 +196,7 @@ export default function MapPage() {
 - Trình độ kỹ năng hiện tại: ${formData.skill}
 
 Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, bao gồm các bài học cụ thể và các mốc tiến độ quan trọng.`;
-
+      console.log(aiQuery);
       // 3️⃣ Step 3: Send to AI backend
       const aiRes = await fetch(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/api/generate-curriculum`,
@@ -204,7 +204,9 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, 
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            user_id: user?.id,
+            // --- THIS IS THE FIX ---
+            user_id: String(user?.id), // Convert the number to a string
+            // -----------------------
             query: aiQuery,
           }),
         }

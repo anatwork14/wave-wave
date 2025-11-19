@@ -14,6 +14,8 @@ export type User = {
 type UserState = {
   user: User | null;
   setUser: (user: User | null) => void;
+  isMap: boolean;
+  setIsMap: (isMap: boolean) => void;
 };
 
 // 2. Wrap your store creation with persist()
@@ -23,6 +25,8 @@ export const useUserStore = create<UserState>()(
     (set) => ({
       user: null,
       setUser: (user) => set({ user }),
+      isMap: true,
+      setIsMap: (isMap) => set({ isMap }),
     }),
     {
       // 3. Configure persistence

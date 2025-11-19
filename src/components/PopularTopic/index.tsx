@@ -23,7 +23,7 @@ export default function PopularTopic({ topics }: PopularTopicProps) {
       </div>
 
       <a
-        href="/study"
+        href="/study/map"
         className="text-red-700 text-left font-semibold hover:underline text-lg"
       >
         Tất cả chủ đề
