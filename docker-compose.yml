@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # 1. The PostgreSQL Database Service
   db:
@@ -8,6 +6,10 @@ services:
     # Loads all credentials (POSTGRES_USER, POSTGRES_PASSWORD, etc.) from the .env file
     env_file:
       - .env
+    environment:
+      - POSTGRES_DB=${PG_DB_NAME:-sudocode}
+      - POSTGRES_USER=${PG_DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${PG_DB_PASSWORD:-123456}
     volumes:
       # Persist data so it doesn't vanish when container stops
       - postgres_data:/var/lib/postgresql/data
@@ -17,28 +19,67 @@ services:
       # Maps localhost:5432 to container:5432 (for external tools like pgAdmin)
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${PG_DB_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # 2. Your Backend / MCP Server
+  # 2. Backend Service (Port 8000)
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: mcp_backend
-    # Make sure this command is correct for starting your application
+    container_name: backend
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      # Override DB host to match service name
+      - LOCAL_POSTGRESSQL_URI=postgresql+asyncpg://${PG_DB_USER:-postgres}:${PG_DB_PASSWORD:-123456}@db:5432/${PG_DB_NAME:-sudocode}
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - .:/app
+      - ./backend:/app
+
+  # 3. MCP Server Service (Port 8002)
+  mcp_server:
+    build:
+      context: ./mcp_server
+      dockerfile: Dockerfile
+    container_name: mcp_server
+    command: uvicorn server:app --host 0.0.0.0 --port 8002 --reload
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    environment:
+      - PG_DB_HOST=db
+      - PG_DB_PORT=5432
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./mcp_server:/app
+
+  # 4. Wave-Wave-ViSL-Recognition Service (Port 8001)
+  recognition:
+    build:
+      context: ./Wave-Wave-ViSL-Recognition/deploy
+      dockerfile: Dockerfile
+    container_name: recognition_model
+    command: uvicorn main:app --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    volumes:
+      # Mount the app directory for development if needed, though the Dockerfile copies it.
+      # If you want hot reload for this, you'd need to mount it and use --reload.
+      # For now, we keep it as is.
+      - ./Wave-Wave-ViSL-Recognition/deploy/app:/app
 
 volumes:
   postgres_data:

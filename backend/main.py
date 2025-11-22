@@ -57,7 +57,7 @@ async def startup_db_pool():
     """
     Create a database connection pool on application startup.
     """
-    db_url = os.getenv("LOCAL_POSTGRESSQL_URI")
+    db_url = os.getenv("LOCAL_POSTGRESSQL_URI").replace("postgresql+asyncpg://", "postgresql://")
     if not db_url:
         raise ValueError("LOCAL_POSTGRESSQL_URI environment variable not set.")
     try:

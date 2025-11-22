@@ -10,8 +10,12 @@ VIDEO_AGENT = root_agent
 # -------------------------------------------------------------
 # 3. Initialize ADK Session Service and Runner 💾
 # -------------------------------------------------------------
-session_service = DatabaseSessionService(
-    db_url=os.getenv("LOCAL_POSTGRESSQL_URI"))
+# Ensure the URL uses the async driver
+db_url = os.getenv("LOCAL_POSTGRESSQL_URI")
+if db_url and db_url.startswith("postgresql://") and not db_url.startswith("postgresql+asyncpg://"):
+    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
+
+session_service = DatabaseSessionService(db_url=db_url)
 
 ADK_RUNNER = Runner(
     agent=VIDEO_AGENT,

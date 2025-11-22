@@ -1,27 +1,27 @@
 {
   "pages": {
     "/chat/page": [
-      "static/chunks/ef4cf_next_dist_235c130c._.js",
-      "static/chunks/Project_Sudo_wave-wave_frontend_src_app_favicon_ico_mjs_eeeda4f1._.js",
-      "static/chunks/[root-of-the-server]__007a6e51._.css",
-      "static/chunks/ef4cf_next_92bfa3e6._.js",
-      "static/chunks/ef4cf_react-icons_8d2ecdda._.js",
-      "static/chunks/ef4cf_d00e267a._.js",
-      "static/chunks/Project_Sudo_wave-wave_frontend_src_b62e37ac._.js",
-      "static/chunks/Project_Sudo_wave-wave_frontend_src_app_layout_tsx_5561324a._.js",
-      "static/chunks/ef4cf_next_dist_client_components_builtin_global-error_8eafab28.js",
-      "static/chunks/Project_Sudo_wave-wave_frontend_src_a6826f50._.js",
-      "static/chunks/ef4cf_9fb976e5._.js",
-      "static/chunks/Project_Sudo_wave-wave_frontend_src_app_chat_page_tsx_8eafab28._.js",
-      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_a70a8791._.js",
-      "static/chunks/ef4cf_next_dist_compiled_react-dom_66c0b92b._.js",
-      "static/chunks/ef4cf_next_dist_compiled_next-devtools_index_8a726584.js",
-      "static/chunks/ef4cf_next_dist_compiled_6ed6c527._.js",
-      "static/chunks/ef4cf_next_dist_client_29bc9ade._.js",
-      "static/chunks/ef4cf_next_dist_0200e746._.js",
-      "static/chunks/ef4cf_@swc_helpers_cjs_40cdbdd8._.js",
-      "static/chunks/Project_Sudo_wave-wave_frontend_a0ff3932._.js",
-      "static/chunks/turbopack-Project_Sudo_wave-wave_frontend_1ab04c26._.js"
+      "static/chunks/node_modules_next_dist_8db7fb1f._.js",
+      "static/chunks/src_app_favicon_ico_mjs_243aa161._.js",
+      "static/chunks/[root-of-the-server]__cef5bf1f._.css",
+      "static/chunks/node_modules_next_deaa9f9f._.js",
+      "static/chunks/node_modules_react-icons_d9f64c52._.js",
+      "static/chunks/node_modules_d584b822._.js",
+      "static/chunks/src_c144e261._.js",
+      "static/chunks/src_app_layout_tsx_0a548d63._.js",
+      "static/chunks/node_modules_next_dist_client_components_builtin_global-error_8eef59b1.js",
+      "static/chunks/src_d0f94aeb._.js",
+      "static/chunks/node_modules_67a62a6c._.js",
+      "static/chunks/src_app_chat_page_tsx_8eef59b1._.js",
+      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_57d40746._.js",
+      "static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js",
+      "static/chunks/node_modules_next_dist_compiled_next-devtools_index_a9cb0712.js",
+      "static/chunks/node_modules_next_dist_compiled_5150ccfd._.js",
+      "static/chunks/node_modules_next_dist_client_cf1d9188._.js",
+      "static/chunks/node_modules_next_dist_b0daae9a._.js",
+      "static/chunks/node_modules_@swc_helpers_cjs_b3dc30d6._.js",
+      "static/chunks/_a0ff3932._.js",
+      "static/chunks/turbopack-_cdba956c._.js"
     ]
   }
 }
