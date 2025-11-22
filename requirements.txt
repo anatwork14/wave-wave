@@ -11,7 +11,7 @@ mysqlclient
 psycopg2-binary
 google-generativeai
 asyncpg
-qdrant_client
+qdrant-client
 pandas
 numpy
 uv

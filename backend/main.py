@@ -41,6 +41,7 @@ load_dotenv()
 app = FastAPI()
 origins = [
     "http://localhost:3000",
+    # You can add other origins here if needed, like your production frontend URL
 ]
 
 app.add_middleware(
@@ -77,7 +78,7 @@ async def shutdown_db_pool():
     if app.state.db_pool:
         await app.state.db_pool.close()
         print("Database connection pool closed.")
-
+# Global variable for the application name
 APP_NAME = "teacher_agent"
 
 try:
@@ -488,6 +489,23 @@ class FetchPostsParams(BaseModel):
         if self.tags is None:
             self.tags = []
 
+class FullVocabularyItem(BaseModel):
+    """Chi tiết đầy đủ của một từ vựng, bao gồm topic_id."""
+    id: int
+    original_id: str | None = None # Giữ lại ID string gốc
+    topic_id: Optional[int] = None
+    word: str
+    instruction: str
+    video: str | None = None
+
+class AllWordsList(BaseModel):
+    """Mô hình phản hồi cho API lấy tất cả từ vựng."""
+    vocabulary: List[FullVocabularyItem]
+
+class SearchWordTopicResponse(BaseModel):
+    """Mô hình phản hồi cho API tìm kiếm từ."""
+    search_result: FullVocabularyItem
+    related_words: List[FullVocabularyItem]
 # --- END NEW QUIZ MODELS ---
 
 @app.post("/api/auth/google/token", response_model=UserResponse)
@@ -2032,7 +2050,140 @@ async def create_comment(
         return full_comment_record
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi cơ sở dữ liệu: {str(e)}")
+# -------------------------------------------------------------
+# Dictionary API 🚀
+# -------------------------------------------------------------
+@app.get("/api/vocabulary/all", response_model=AllWordsList)
+async def get_all_vocabulary(app_request: Request):
+    """
+    Retrieves all words in the dictionary regardless of lesson affiliation.
+    Uses the vocabulary table with topic_id.
+    """
+    try:
+        async with app_request.app.state.db_pool.acquire() as connection:
+            query = """
+                SELECT
+                    id, original_id, topic_id, word, instruction, video
+                FROM
+                    vocabulary
+                ORDER BY
+                    word;
+            """
+            records = await connection.fetch(query)
 
+            vocabulary = [
+                FullVocabularyItem(
+                    id=r['id'],
+                    original_id=r['original_id'],
+                    topic_id=r['topic_id'],
+                    word=r['word'],
+                    instruction=r['instruction'],
+                    video=r['video']
+                ) for r in records
+            ]
+            return AllWordsList(vocabulary=vocabulary)
+
+    except Exception as e:
+        print(f"Error getting all vocabulary: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Could not retrieve all vocabulary. Error: {e}"
+        )
+        
+@app.get("/api/vocabulary/search", response_model=SearchWordTopicResponse)
+async def search_word_and_get_related(
+  app_request: Request,
+  word_query: str = Query(..., description="The word to search for (e.g., 'con bò')")
+):
+  """
+  Searches for a specific word, returns the word details, 
+  and all other words belonging to the same topic_id.
+  """
+  search_term = word_query.strip()
+  
+  try:
+    async with app_request.app.state.db_pool.acquire() as connection:
+      
+      # --- 1. Tìm từ gốc và Topic ID ---
+      # Cố gắng tìm kiếm chính xác (case-insensitive)
+        found_word_record = await connection.fetchrow(
+        """
+        SELECT id, original_id, topic_id, word, instruction, video 
+        FROM vocabulary
+        WHERE word ILIKE $1 
+        LIMIT 1;
+        """,
+        search_term 
+      )
+
+            # Nếu tìm kiếm chính xác thất bại, thử tìm kiếm gần đúng hơn
+        if not found_word_record:
+                 found_word_record = await connection.fetchrow(
+        """
+        SELECT id, original_id, topic_id, word, instruction, video 
+        FROM vocabulary
+        WHERE word ILIKE $1 
+        LIMIT 1;
+        """,
+        f'%{search_term}%' # Thêm % ở hai đầu để tìm kiếm lỏng hơn
+      )
+
+
+        if not found_word_record:
+            raise HTTPException(status_code=404, detail=f"Word '{search_term}' not found.")
+      
+      # Chuẩn bị kết quả tìm kiếm
+        search_result_item = FullVocabularyItem(
+        id=found_word_record['id'],
+        original_id=found_word_record['original_id'],
+        topic_id=found_word_record['topic_id'],
+        word=found_word_record['word'],
+        instruction=found_word_record['instruction'],
+        video=found_word_record['video']
+      )
+
+        related_words = []
+        topic_id = found_word_record['topic_id']
+      
+      # --- 2. Lấy các từ liên quan (cùng Topic ID) ---
+        if topic_id is not None:
+            related_query = """
+          SELECT id, original_id, topic_id, word, instruction, video 
+          FROM vocabulary
+          WHERE topic_id = $1 AND id != $2
+          ORDER BY word;
+        """
+            related_records = await connection.fetch(
+          related_query, 
+          topic_id, 
+          found_word_record['id']
+        )
+        
+        related_words = [
+          FullVocabularyItem(
+            id=r['id'],
+            original_id=r['original_id'],
+            topic_id=r['topic_id'],
+            word=r['word'],
+            instruction=r['instruction'],
+            video=r['video']
+          ) for r in related_records
+        ]
+
+      # --- 3. Trả về kết quả cuối cùng ---
+        return SearchWordTopicResponse(
+        search_result=search_result_item,
+        related_words=related_words
+      )
+
+  except HTTPException:
+    raise # Re-raise 404
+  except Exception as e:
+    print(f"Error searching vocabulary for '{search_term}': {e}")
+    raise HTTPException(
+      status_code=500,
+      detail=f"An internal error occurred during search. Error: {e}"
+    )
 # -------------------------------------------------------------
 # 5. Run the server locally 🚀
 # -------------------------------------------------------------

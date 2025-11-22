@@ -21,18 +21,18 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const { prompt, setPrompt } = usePromptStore();
   const router = useRouter();
-  const sampleMarkdown = `
-# Vì sao tôi chọn học ngôn ngữ ký hiệu
+  //   const sampleMarkdown = `
+  // # Vì sao tôi chọn học ngôn ngữ ký hiệu
 
-Tôi vẫn nhớ rất rõ lần đầu tiên tôi nhìn thấy hai người giao tiếp bằng ngôn ngữ ký hiệu — không có âm thanh, chỉ có ánh mắt, bàn tay và những nụ cười. Dù không hiểu họ nói gì, tôi vẫn cảm nhận được sự kết nối mạnh mẽ trong từng cử chỉ. Và có lẽ, chính khoảnh khắc ấy đã gieo trong tôi ý định học ngôn ngữ ký hiệu.
-## 1. Tôi muốn hiểu và được hiểu
+  // Tôi vẫn nhớ rất rõ lần đầu tiên tôi nhìn thấy hai người giao tiếp bằng ngôn ngữ ký hiệu — không có âm thanh, chỉ có ánh mắt, bàn tay và những nụ cười. Dù không hiểu họ nói gì, tôi vẫn cảm nhận được sự kết nối mạnh mẽ trong từng cử chỉ. Và có lẽ, chính khoảnh khắc ấy đã gieo trong tôi ý định học ngôn ngữ ký hiệu.
+  // ## 1. Tôi muốn hiểu và được hiểu
 
-Tôi từng có một người bạn khiếm thính ở trường đại học. Cậu ấy rất thân thiện nhưng giao tiếp với mọi người thường gặp khó khăn. Nhiều lần tôi chỉ biết mỉm cười vì không biết nói gì hơn. Cảm giác bất lực ấy khiến tôi tự hỏi: “Tại sao mình không thử học để hiểu bạn ấy hơn?” Khi bắt đầu học những ký hiệu đầu tiên, tôi nhận ra — chỉ cần một chút nỗ lực, ta có thể phá bỏ rào cản im lặng mà lâu nay chúng ta thường bỏ qua.
-## 2. Ngôn ngữ ký hiệu không chỉ là ký hiệu
+  // Tôi từng có một người bạn khiếm thính ở trường đại học. Cậu ấy rất thân thiện nhưng giao tiếp với mọi người thường gặp khó khăn. Nhiều lần tôi chỉ biết mỉm cười vì không biết nói gì hơn. Cảm giác bất lực ấy khiến tôi tự hỏi: “Tại sao mình không thử học để hiểu bạn ấy hơn?” Khi bắt đầu học những ký hiệu đầu tiên, tôi nhận ra — chỉ cần một chút nỗ lực, ta có thể phá bỏ rào cản im lặng mà lâu nay chúng ta thường bỏ qua.
+  // ## 2. Ngôn ngữ ký hiệu không chỉ là ký hiệu
 
-Nhiều người nghĩ học ký hiệu là học *“tay làm gì để nói chữ gì”*. Nhưng thực ra, đó là một cách nhìn mới về ngôn ngữ và cảm xúc.
-Tôi học được cách lắng nghe bằng mắt, diễn đạt bằng gương mặt, và đồng cảm bằng cả cơ thể. Nó không chỉ giúp tôi hiểu người khiếm thính, mà còn khiến tôi giao tiếp sâu sắc hơn với tất cả mọi người.
-`;
+  // Nhiều người nghĩ học ký hiệu là học *“tay làm gì để nói chữ gì”*. Nhưng thực ra, đó là một cách nhìn mới về ngôn ngữ và cảm xúc.
+  // Tôi học được cách lắng nghe bằng mắt, diễn đạt bằng gương mặt, và đồng cảm bằng cả cơ thể. Nó không chỉ giúp tôi hiểu người khiếm thính, mà còn khiến tôi giao tiếp sâu sắc hơn với tất cả mọi người.
+  // `;
   const handleSubmit = () => {
     router.push("/chat");
   };
@@ -85,7 +85,7 @@ Tôi học được cách lắng nghe bằng mắt, diễn đạt bằng gương
         />
         <div className="hidden xl:flex flex-col gap-y-10">
           {[
-            { id: "01", color: "#FF6060", text: "Hơn 4000 từ vựng" },
+            { id: "01", color: "#FF6060", text: "Hơn 100 từ vựng" },
             { id: "02", color: "#2B4BB3", text: "Học cùng với AI" },
             { id: "03", color: "#32AAA0", text: "Lộ trình học riêng" },
           ].map((item) => (
@@ -181,13 +181,12 @@ Tôi học được cách lắng nghe bằng mắt, diễn đạt bằng gương
       </section>
 
       {/* Top Content Section */}
-      <section className="mt-24 mx-auto w-[95%] text-left px-4">
+      {/* <section className="mt-24 mx-auto w-[95%] text-left px-4">
         <h1 className="text-4xl font-bold text-[#C73B3B] mb-8">
           Thông tin nổi bật
         </h1>
 
         <div className="flex flex-col lg:flex-row gap-3 lg:gap-3">
-          {/* Left Column */}
           <div className="flex-1">
             <TopPost
               authorName="Công Tước Hắc Ám"
@@ -199,7 +198,6 @@ Tôi học được cách lắng nghe bằng mắt, diễn đạt bằng gương
             />
           </div>
 
-          {/* Right Column */}
           <div className="flex flex-col lg:w-[480px] w-full gap-3">
             <DictionaryCard
               title="Trái Dừa"
@@ -222,7 +220,7 @@ Tôi học được cách lắng nghe bằng mắt, diễn đạt bằng gương
             />
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }

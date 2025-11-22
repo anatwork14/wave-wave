@@ -613,7 +613,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave
 ;
 ;
 ;
-function SameTopicSection({ sameTopicWord = [], itemsPerPage = 9, activeTab = "sameTopic" }) {
+function SameTopicSection({ sameTopicWord = [], itemsPerPage = 9, activeTab = "sameTopic", onClickWord }) {
     const [page, setPage] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(1);
     // Derived data
     const totalPages = Math.ceil(sameTopicWord.length / itemsPerPage);
@@ -648,12 +648,12 @@ function SameTopicSection({ sameTopicWord = [], itemsPerPage = 9, activeTab = "s
                     children: "Cùng chủ đề"
                 }, void 0, false, {
                     fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                    lineNumber: 46,
+                    lineNumber: 56,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                lineNumber: 45,
+                lineNumber: 55,
                 columnNumber: 7
             }, this),
             sameTopicWord.length === 0 ? // 🩶 Graceful Empty State
@@ -662,30 +662,30 @@ function SameTopicSection({ sameTopicWord = [], itemsPerPage = 9, activeTab = "s
                 children: "Không có từ nào cùng chủ đề."
             }, void 0, false, {
                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                lineNumber: 61,
+                lineNumber: 71,
                 columnNumber: 9
             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "grid grid-cols-3 gap-8",
                         children: columns.map((group, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                children: group.map((item, idx)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("a", {
-                                        href: item.link ? `/${item.title}` : "#",
-                                        className: "block text-gray-600 hover:text-[#f66868] hover:underline mb-2 transition-colors",
-                                        children: item.title
-                                    }, idx, false, {
+                                children: group.map((item)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                        onClick: ()=>onClickWord?.(item.word),
+                                        className: "block text-left text-gray-600 hover:text-[#f66868] hover:underline mb-2 transition-colors",
+                                        children: item.word
+                                    }, item.id, false, {
                                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                                        lineNumber: 71,
+                                        lineNumber: 81,
                                         columnNumber: 19
                                     }, this))
                             }, i, false, {
                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                                lineNumber: 69,
+                                lineNumber: 79,
                                 columnNumber: 15
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                        lineNumber: 67,
+                        lineNumber: 77,
                         columnNumber: 11
                     }, this),
                     totalPages > 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -696,7 +696,7 @@ function SameTopicSection({ sameTopicWord = [], itemsPerPage = 9, activeTab = "s
                                 children: `${(page - 1) * itemsPerPage + 1}–${Math.min(page * itemsPerPage, sameTopicWord.length)} trong ${sameTopicWord.length} từ`
                             }, void 0, false, {
                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                                lineNumber: 86,
+                                lineNumber: 96,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -710,12 +710,12 @@ function SameTopicSection({ sameTopicWord = [], itemsPerPage = 9, activeTab = "s
                                             className: "w-4 h-4 text-[#f66868]"
                                         }, void 0, false, {
                                             fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                                            lineNumber: 104,
+                                            lineNumber: 114,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                                        lineNumber: 94,
+                                        lineNumber: 104,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -726,24 +726,24 @@ function SameTopicSection({ sameTopicWord = [], itemsPerPage = 9, activeTab = "s
                                             className: "w-4 h-4 text-[#f66868]"
                                         }, void 0, false, {
                                             fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                                            lineNumber: 116,
+                                            lineNumber: 126,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                                        lineNumber: 106,
+                                        lineNumber: 116,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                                lineNumber: 93,
+                                lineNumber: 103,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-                        lineNumber: 85,
+                        lineNumber: 95,
                         columnNumber: 13
                     }, this)
                 ]
@@ -751,7 +751,7 @@ function SameTopicSection({ sameTopicWord = [], itemsPerPage = 9, activeTab = "s
         ]
     }, void 0, true, {
         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/components/SameTopicSection.tsx",
-        lineNumber: 43,
+        lineNumber: 53,
         columnNumber: 5
     }, this);
 }
@@ -2182,113 +2182,81 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave
 ;
 ;
 ;
-const synonyms = [
-    {
-        title: "Map",
-        link: "/dictionary"
-    },
-    {
-        title: "Occasion",
-        link: "/dictionary"
-    },
-    {
-        title: "Office",
-        link: "/dictionary"
-    },
-    {
-        title: "Part",
-        link: "/dictionary"
-    },
-    {
-        title: "Procedure",
-        link: "/dictionary"
-    },
-    {
-        title: "Purpose",
-        link: "/dictionary"
-    },
-    {
-        title: "Role",
-        link: "/dictionary"
-    },
-    {
-        title: "Routine",
-        link: "/dictionary"
-    },
-    {
-        title: "Use",
-        link: "/dictionary"
-    },
-    {
-        title: "Part",
-        link: "/dictionary"
-    },
-    {
-        title: "Procedure",
-        link: "/dictionary"
-    },
-    {
-        title: "Purpose",
-        link: "/dictionary"
-    },
-    {
-        title: "Role",
-        link: "/dictionary"
-    },
-    {
-        title: "Routine",
-        link: "/dictionary"
-    },
-    {
-        title: "Use",
-        link: "/dictionary"
-    }
-];
-const currentVocabulary = {
-    title: "Trái dừa",
-    partOfSpeech: "Danh từ",
-    description: "Mô tả hành động trái dừa",
-    videoUrl: "https://qipedc.moet.gov.vn/videos/W02732N.mp4?autoplay=true"
-};
 function DictionaryPage() {
     const [showNoResult, setShowNoResult] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [searchQuery, setSearchQuery] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])("");
     const [definition, setDefinition] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
-    const [sameTopicVocab, setSameTopicVocab] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]); // ✅ fixed type
+    const [sameTopicVocab, setSameTopicVocab] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
+    const [allVocab, setAllVocab] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
+    const [loadingAll, setLoadingAll] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [allError, setAllError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
+    // Fetch all vocabulary on mount so we can display the list and allow clicking
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        const fetchAllWords = async ()=>{
+            setLoadingAll(true);
+            setAllError(null);
+            try {
+                const res = await fetch(`${("TURBOPACK compile-time value", "http://127.0.0.1:8000")}/api/vocabulary/all`);
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const data = await res.json();
+                // Support several possible payload shapes
+                let items = [];
+                if (Array.isArray(data.vocabulary)) items = data.vocabulary; // ✅ Thêm dòng này
+                else if (Array.isArray(data)) items = data;
+                else if (Array.isArray(data.words)) items = data.words;
+                else if (Array.isArray(data.items)) items = data.items;
+                setAllVocab(items);
+            } catch (err) {
+                console.error("Failed to fetch all vocabulary:", err);
+                setAllError(err?.message || "Failed to fetch all words");
+            } finally{
+                setLoadingAll(false);
+            }
+        };
+        fetchAllWords();
+    }, []);
+    // --- HÀM ĐÃ SỬA LỖI ---
     const handleSearch = async (query)=>{
-        setSearchQuery(query);
+        // 1. Luôn cập nhật searchQuery trước khi gọi API
+        setSearchQuery(query); // 2. Reset trạng thái kết quả
+        setDefinition(null);
+        setSameTopicVocab([]);
+        setShowNoResult(false);
+        if (!query.trim()) return; // Không tìm kiếm nếu query rỗng
         try {
-            // Example: call your dictionary API
-            // const res = await fetch(
-            //   `/api/dictionary?word=${encodeURIComponent(query)}`
-            // );
-            // const data = await res.json();
-            // if (data && data.definition && data.definition) {
-            //   setDefinition(data.definition);
-            // } else {
-            //   // No results found
-            // }
-            const data = {
-                definition: currentVocabulary,
-                synonyms: synonyms
-            };
-            // const data = null;
-            if (data && data.definition) {
-                setDefinition(data.definition);
-                setSameTopicVocab(data.synonyms || []);
-                setShowNoResult(false); // ✅ Hide the dialog if we found something
+            // GỌI API TÌM KIẾM
+            const res = await fetch(`${("TURBOPACK compile-time value", "http://127.0.0.1:8000")}/api/vocabulary/search?word_query=${encodeURIComponent(query.trim())}`); // 3. Xử lý phản hồi 404 (Không tìm thấy)
+            if (res.status === 404) {
+                setShowNoResult(true);
+                return;
+            } // 4. Xử lý lỗi HTTP khác
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            const data = await res.json(); // 5. Xử lý dữ liệu thành công
+            if (data && data.search_result) {
+                // Ánh xạ dữ liệu tìm kiếm
+                const result = {
+                    ...data.search_result,
+                    partOfSpeech: data.search_result.partOfSpeech || "Chưa xác định"
+                };
+                setDefinition(result); // Ánh xạ dữ liệu liên quan
+                const relatedWords = (data.related_words || []).map((item)=>({
+                        ...item,
+                        partOfSpeech: item.partOfSpeech || "Chưa xác định"
+                    }));
+                setSameTopicVocab(relatedWords);
             } else {
-                setDefinition(null);
-                setSameTopicVocab([]);
-                setShowNoResult(true); // ✅ Only show the popup if no result
+                // Dữ liệu rỗng nhưng không phải 404
+                setShowNoResult(true);
             }
         } catch (error) {
-            console.error("Search failed:", error);
+            console.error("Search failed:", error); // Xử lý lỗi mạng/server
             setShowNoResult(true);
         }
     };
     const handleAskMiniWave = ()=>{
-        // You can navigate, open a chat window, or trigger a Mini Wave modal here
+        // Logic cho Mini Wave
         alert(`Mini Wave is analyzing your query: "${searchQuery}"`);
         setShowNoResult(false);
     };
@@ -2311,7 +2279,7 @@ function DictionaryPage() {
                                         children: "Không tìm thấy kết quả 😕"
                                     }, void 0, false, {
                                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                        lineNumber: 106,
+                                        lineNumber: 148,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogDescription"], {
@@ -2328,7 +2296,7 @@ function DictionaryPage() {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                                lineNumber: 111,
+                                                lineNumber: 153,
                                                 columnNumber: 17
                                             }, this),
                                             ". Bạn có muốn nhờ",
@@ -2338,7 +2306,7 @@ function DictionaryPage() {
                                                 children: "Mini Wave"
                                             }, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                                lineNumber: 115,
+                                                lineNumber: 157,
                                                 columnNumber: 17
                                             }, this),
                                             " ",
@@ -2346,13 +2314,13 @@ function DictionaryPage() {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                        lineNumber: 109,
+                                        lineNumber: 151,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                lineNumber: 105,
+                                lineNumber: 147,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -2365,7 +2333,7 @@ function DictionaryPage() {
                                         children: "Đóng"
                                     }, void 0, false, {
                                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                        lineNumber: 121,
+                                        lineNumber: 163,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -2374,24 +2342,24 @@ function DictionaryPage() {
                                         children: "Hỏi Mini Wave 💬"
                                     }, void 0, false, {
                                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                        lineNumber: 128,
+                                        lineNumber: 170,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                lineNumber: 120,
+                                lineNumber: 162,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                        lineNumber: 104,
+                        lineNumber: 146,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                    lineNumber: 103,
+                    lineNumber: 145,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2409,33 +2377,33 @@ function DictionaryPage() {
                                                 className: "w-8 h-px bg-gradient-to-r from-transparent to-[#f66868]"
                                             }, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                                lineNumber: 145,
+                                                lineNumber: 185,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                                                className: "text-6xl  font-black text-[#f66868]",
+                                                className: "text-6xl  font-black text-[#f66868]",
                                                 children: "Từ điển Wave Wave"
                                             }, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                                lineNumber: 146,
+                                                lineNumber: 186,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                 className: "w-8 h-px bg-gradient-to-l from-transparent to-[#f66868]"
                                             }, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                                lineNumber: 149,
+                                                lineNumber: 189,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                        lineNumber: 144,
+                                        lineNumber: 184,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                    lineNumber: 143,
+                                    lineNumber: 183,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2446,7 +2414,7 @@ function DictionaryPage() {
                                             children: "Khám phá nghĩa, ví dụ và video minh họa cho từng từ vựng bạn muốn học"
                                         }, void 0, false, {
                                             fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                            lineNumber: 155,
+                                            lineNumber: 195,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2458,7 +2426,7 @@ function DictionaryPage() {
                                                     children: "Mini Wave"
                                                 }, void 0, false, {
                                                     fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                                    lineNumber: 160,
+                                                    lineNumber: 200,
                                                     columnNumber: 22
                                                 }, this),
                                                 " ",
@@ -2466,19 +2434,19 @@ function DictionaryPage() {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                            lineNumber: 159,
+                                            lineNumber: 199,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                    lineNumber: 154,
+                                    lineNumber: 194,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                            lineNumber: 139,
+                            lineNumber: 181,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$src$2f$components$2f$SearchBar$2f$index$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
@@ -2486,29 +2454,92 @@ function DictionaryPage() {
                             onSearch: handleSearch
                         }, void 0, false, {
                             fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                            lineNumber: 165,
+                            lineNumber: 205,
+                            columnNumber: 11
+                        }, this),
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "max-w-5xl mx-auto mt-4",
+                            children: loadingAll ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                className: "text-sm text-gray-500",
+                                children: "Đang tải danh sách từ..."
+                            }, void 0, false, {
+                                fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
+                                lineNumber: 212,
+                                columnNumber: 15
+                            }, this) : allError ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                className: "text-sm text-red-500",
+                                children: [
+                                    "Lỗi: ",
+                                    allError
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
+                                lineNumber: 214,
+                                columnNumber: 15
+                            }, this) : allVocab && allVocab.length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
+                                        className: "text-sm text-gray-600 mb-2",
+                                        children: "Tất cả từ vựng"
+                                    }, void 0, false, {
+                                        fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
+                                        lineNumber: 217,
+                                        columnNumber: 17
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "flex flex-wrap gap-2",
+                                        children: allVocab.filter((w)=>!(definition && definition.word === w.word)).map((w)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                                onClick: ()=>handleSearch(w.word),
+                                                className: `px-3 py-1 rounded-lg border transition-all duration-150 text-sm bg-white text-gray-700 border-gray-200 hover:bg-gray-50`,
+                                                children: w.word
+                                            }, w.id, false, {
+                                                fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
+                                                lineNumber: 222,
+                                                columnNumber: 23
+                                            }, this))
+                                    }, void 0, false, {
+                                        fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
+                                        lineNumber: 218,
+                                        columnNumber: 17
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
+                                lineNumber: 216,
+                                columnNumber: 15
+                            }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                className: "text-sm text-gray-500",
+                                children: "Không có từ nào để hiển thị."
+                            }, void 0, false, {
+                                fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
+                                lineNumber: 233,
+                                columnNumber: 15
+                            }, this)
+                        }, void 0, false, {
+                            fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
+                            lineNumber: 210,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                    lineNumber: 137,
+                    lineNumber: 179,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: `max-w-7xl mx-auto mt-10 grid grid-cols-1 ${definition && "xl:grid-cols-3"}  gap-6`,
+                    className: `max-w-7xl mx-auto mt-10 grid grid-cols-1 ${definition ? "xl:grid-cols-3" : ""} gap-6`,
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "lg:col-span-2 space-y-4",
                             children: definition ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$src$2f$components$2f$VocabularyInfo$2f$index$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                                word: currentVocabulary.title,
-                                partOfSpeech: currentVocabulary.partOfSpeech,
-                                definition: currentVocabulary.description,
-                                videoUrl: currentVocabulary.videoUrl,
+                                word: definition.word,
+                                partOfSpeech: definition.partOfSpeech,
+                                definition: definition.instruction,
+                                videoUrl: definition.video || undefined,
                                 imageUrl: "/logo.svg"
                             }, void 0, false, {
                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                lineNumber: 179,
+                                lineNumber: 248,
                                 columnNumber: 15
                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "flex flex-col items-center justify-center w-full py-16 text-center",
@@ -2520,7 +2551,7 @@ function DictionaryPage() {
                                                 className: "absolute -inset-6 bg-blue-500/10 blur-3xl rounded-full animate-pulse"
                                             }, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                                lineNumber: 189,
+                                                lineNumber: 258,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
@@ -2531,13 +2562,13 @@ function DictionaryPage() {
                                                 className: "relative z-10 opacity-95 hover:scale-105 transition-transform duration-700 ease-out drop-shadow-[0_0_20px_#2563EB]/40"
                                             }, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                                lineNumber: 190,
+                                                lineNumber: 259,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                        lineNumber: 188,
+                                        lineNumber: 257,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2546,7 +2577,7 @@ function DictionaryPage() {
                                             "Hãy nhập để khám phá kho từ vựng ",
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("br", {}, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                                lineNumber: 200,
+                                                lineNumber: 269,
                                                 columnNumber: 52
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2554,7 +2585,7 @@ function DictionaryPage() {
                                                 children: "hơn 4000 từ của "
                                             }, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                                lineNumber: 201,
+                                                lineNumber: 270,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2562,68 +2593,69 @@ function DictionaryPage() {
                                                 children: "Wave Wave"
                                             }, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                                lineNumber: 202,
+                                                lineNumber: 271,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                        lineNumber: 199,
+                                        lineNumber: 268,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                lineNumber: 187,
+                                lineNumber: 256,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                            lineNumber: 177,
+                            lineNumber: 246,
                             columnNumber: 11
                         }, this),
                         definition && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "flex flex-col gap-y-3",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$src$2f$components$2f$DictionaryCard$2f$index$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                                    title: "Trái Dừa",
-                                    tag: "Danh từ",
+                                    title: definition.word,
+                                    tag: definition.partOfSpeech || "Chưa xác định",
                                     imageUrl: "dictionary/coconut.svg",
                                     dictionaryUrl: "/dictionary",
                                     isDictionaryPage: false
                                 }, void 0, false, {
                                     fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                    lineNumber: 213,
+                                    lineNumber: 282,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$src$2f$app$2f$dictionary$2f$components$2f$SameTopicSection$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                                    sameTopicWord: sameTopicVocab
+                                    sameTopicWord: sameTopicVocab,
+                                    onClickWord: handleSearch
                                 }, void 0, false, {
                                     fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                                    lineNumber: 220,
+                                    lineNumber: 289,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                            lineNumber: 212,
+                            lineNumber: 281,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-                    lineNumber: 171,
+                    lineNumber: 240,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-            lineNumber: 102,
+            lineNumber: 144,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/dictionary/page.tsx",
-        lineNumber: 101,
+        lineNumber: 143,
         columnNumber: 5
     }, this);
 }

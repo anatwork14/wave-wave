@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "123456"
+      POSTGRES_DB: sudocode
+    ports:
+      - "5432:5432"
+    volumes:
+      # 1. Persist data locally for the user
+      - postgres_data:/var/lib/postgresql/data
+      # 2. LOAD YOUR SNAPSHOT (Only runs if database is empty)
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  postgres_data:

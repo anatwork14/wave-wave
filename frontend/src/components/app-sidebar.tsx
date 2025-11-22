@@ -111,7 +111,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 className="md:h-8 md:p-0"
               >
                 <a href="/">
-                  <div className="bg-[#F66868]/20 flex size-8 items-center justify-center rounded-lg">
+                  <div className="flex size-8 items-center justify-center rounded-lg">
                     <Image
                       src={"/logo.svg"}
                       alt="logo"

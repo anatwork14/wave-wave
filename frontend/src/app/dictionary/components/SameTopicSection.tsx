@@ -3,18 +3,28 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import clsx from "clsx";
-import { Vocabulary } from "../page";
+
+// Accept a lightweight shape compatible with FullVocabularyItem
+interface VocabItemShape {
+  id: number;
+  word: string;
+  instruction?: string | null;
+  original_id?: string | null;
+  topic_id?: number | null;
+}
 
 interface SameTopicSectionProps {
-  sameTopicWord?: Vocabulary[];
+  sameTopicWord?: VocabItemShape[];
   itemsPerPage?: number;
   activeTab?: "sameTopic";
+  onClickWord?: (word: string) => void;
 }
 
 export default function SameTopicSection({
   sameTopicWord = [],
   itemsPerPage = 9,
   activeTab = "sameTopic",
+  onClickWord,
 }: SameTopicSectionProps) {
   const [page, setPage] = useState(1);
 
@@ -67,14 +77,14 @@ export default function SameTopicSection({
           <div className="grid grid-cols-3 gap-8">
             {columns.map((group, i) => (
               <div key={i}>
-                {group.map((item, idx) => (
-                  <a
-                    key={idx}
-                    href={item.link ? `/${item.title}` : "#"}
-                    className="block text-gray-600 hover:text-[#f66868] hover:underline mb-2 transition-colors"
+                {group.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => onClickWord?.(item.word)}
+                    className="block text-left text-gray-600 hover:text-[#f66868] hover:underline mb-2 transition-colors"
                   >
-                    {item.title}
-                  </a>
+                    {item.word}
+                  </button>
                 ))}
               </div>
             ))}

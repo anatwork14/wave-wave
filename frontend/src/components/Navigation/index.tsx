@@ -86,7 +86,7 @@ export default function Navigation() {
   const navLinks: NavLink[] = [
     { name: "Trang chủ", href: "/", actualLink: "/" },
     { name: "Học tập", href: "/study/map", actualLink: "/study/map" },
-    { name: "Cộng đồng", href: "/community", actualLink: "/community" },
+    // { name: "Cộng đồng", href: "/community", actualLink: "/community" },
     { name: "Từ điển", href: "/dictionary", actualLink: "/dictionary" },
     { name: "Chat Wave", href: "/chat", actualLink: "/chat" },
   ];

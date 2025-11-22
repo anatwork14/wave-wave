@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import Image from "next/image";
 import { useUserStore } from "@/store/useUserStore";
 import LearningSummary from "@/components/LearningSummary";
@@ -69,93 +68,84 @@ export default function MapPage() {
   const [syllabuses, setSyllabuses] = useState<MappedSyllabus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false); // Added modal state
-  const [isSubmitting, setIsSubmitting] = useState(false); // Added submission state
-  const router = useRouter(); // ⭐️ Hook for navigation
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchSyllabuses = async () => {
+      let isCurriculumSet = false;
       try {
         setIsLoading(true);
+        // 1. Fetch Syllabuses
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_SERVER_URL}/api/syllabuses/?user_id=${user?.id}`
         );
         if (!response.ok) {
-          throw new Error("Failed to fetch data from server");
+          // If the status is 404/204 or an expected "no content"
+          // We assume no syllabuses yet, which is the trigger state.
+          // For simplicity, we'll check the fetched data length.
+          const text = await response.text();
+          console.warn("Syllabus fetch not OK:", response.status, text);
+          if (response.status === 404 || response.status === 204) {
+            // Treat this as no syllabuses found, don't throw, just move to check preference
+          } else {
+            throw new Error("Failed to fetch syllabuses from server");
+          }
+        } else {
+          const data: { syllabuses: SyllabusInfo[] } = await response.json();
+          if (data.syllabuses && data.syllabuses.length > 0) {
+            const sortedSyllabuses = data.syllabuses.sort(
+              (a, b) => a.id - b.id
+            );
+
+            const mapped_syllabus: MappedSyllabus[] = sortedSyllabuses.map(
+              (syllabus, index) => ({
+                id: syllabus.id.toString(),
+                title: syllabus.title,
+                description: syllabus.description,
+                progress: syllabus.progress,
+                status: syllabus.status as LessonStatus,
+                color: COLORS[index % COLORS.length],
+                lesson_count: syllabus.lesson_count,
+                icon: ICONS[index % ICONS.length],
+                link: `/study/learn/syllabus/${syllabus.id}`,
+              })
+            );
+
+            setSyllabuses(mapped_syllabus);
+            isCurriculumSet = true;
+          } else {
+            setSyllabuses([]);
+            isCurriculumSet = false;
+          }
         }
 
-        const data: { syllabuses: SyllabusInfo[] } = await response.json();
-
-        const sortedSyllabuses = data.syllabuses.sort((a, b) => a.id - b.id);
-
-        const mapped_syllabus: MappedSyllabus[] = sortedSyllabuses.map(
-          (syllabus, index) => {
-            return {
-              id: syllabus.id.toString(),
-              title: syllabus.title,
-              description: syllabus.description,
-              progress: syllabus.progress,
-              status: syllabus.status as LessonStatus,
-              color: COLORS[index % COLORS.length],
-              lesson_count: syllabus.lesson_count,
-              icon: ICONS[index % ICONS.length],
-              link: `/study/learn/syllabus/${syllabus.id}`,
-            };
-          }
-        );
-
-        setSyllabuses(mapped_syllabus);
         setError(null);
       } catch (err: any) {
         setError(err.message);
       } finally {
         setIsLoading(false);
       }
-    };
 
-    const fetchUserPreference = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/preferences/?user_id=${user?.id}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch data from server");
-        }
-
-        const data: { syllabuses: SyllabusInfo[] } = await response.json();
-
-        const sortedSyllabuses = data.syllabuses.sort((a, b) => a.id - b.id);
-
-        const mapped_syllabus: MappedSyllabus[] = sortedSyllabuses.map(
-          (syllabus, index) => {
-            return {
-              id: syllabus.id.toString(),
-              title: syllabus.title,
-              description: syllabus.description,
-              progress: syllabus.progress,
-              status: syllabus.status as LessonStatus,
-              color: COLORS[index % COLORS.length],
-              lesson_count: syllabus.lesson_count,
-              icon: ICONS[index % ICONS.length],
-              link: `/study/learn/syllabus/${syllabus.id}`,
-            };
-          }
-        );
-
-        setSyllabuses(mapped_syllabus);
-        setError(null);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
+      // 2. Check and Open Modal if No Curriculum is Set
+      // This is the core fix: if there are no syllabuses after the fetch,
+      // it means the user hasn't generated a curriculum, so we open the modal.
+      if (!isCurriculumSet) {
+        setIsModalOpen(true);
       }
     };
+
+    // The old fetchUserPreference is now redundant if we check syllabus existence,
+    // as syllabus existence is a good proxy for whether a preference-based
+    // curriculum has been generated.
 
     if (user?.id) {
       fetchSyllabuses();
+      // We removed fetchUserPreference as fetchSyllabuses now includes the logic to check
+      // if a syllabus exists and open the modal if it doesn't.
     }
-  }, [user?.id]);
+  }, [user?.id]); // Depend on user?.id
 
   const handleCurriculumSubmit = async (formData: {
     target: string;
@@ -188,15 +178,15 @@ export default function MapPage() {
         throw new Error("Failed to save user learning preference");
 
       // 2️⃣ Step 2: Build AI Query (Vietnamese version)
-      const aiQuery = `Dựa trên các yêu cầu sau, hãy tạo một giáo trình học cá nhân hoá phù hợp:
-- Mục tiêu học tập: ${formData.target}
-- Thời gian rảnh có thể học: ${formData.freetime}
-- Lịch học mong muốn: ${formData.schedule}
-- Kỳ vọng khi hoàn thành khoá học: ${formData.hope}
-- Trình độ kỹ năng hiện tại: ${formData.skill}
+      const queryParts = [
+        "Hãy tạo một giáo trình học cá nhân hoá phù hợp dựa trên:",
+        formData.target && `- Mục tiêu học tập: ${formData.target}`, // Chỉ thêm nếu formData.target có giá trị
+        formData.hope && `- Kỳ vọng khi hoàn thành khoá học: ${formData.hope}`, // Chỉ thêm nếu formData.hope có giá trị
+        `- Trình độ kỹ năng hiện tại: ${formData.skill}.`,
+        "Không hỏi gì thêm và hãy tạo",
+      ];
 
-Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, bao gồm các bài học cụ thể và các mốc tiến độ quan trọng.`;
-      console.log(aiQuery);
+      const aiQuery = queryParts.filter(Boolean).join("\n");
       // 3️⃣ Step 3: Send to AI backend
       const aiRes = await fetch(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/api/generate-curriculum`,
@@ -204,9 +194,7 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, 
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            // --- THIS IS THE FIX ---
-            user_id: String(user?.id), // Convert the number to a string
-            // -----------------------
+            user_id: String(user?.id),
             query: aiQuery,
           }),
         }
@@ -229,7 +217,9 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, 
 
         setIsModalOpen(false);
         alert("🎓 Giáo trình cá nhân hoá đã được tạo thành công!");
+        // Force reload the syllabuses after creation
         router.push(`/study/learn/syllabus/${syllabusId}`);
+        // Consider a small delay and a soft-reload here or use the router.push
       } else {
         console.warn(
           "⚠️ Không tìm thấy SyllabusID trong phản hồi AI:",
@@ -249,13 +239,36 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, 
     (l) => l.status === "completed"
   ).length;
   const totalCount = syllabuses.length;
-  const progressPercentage = (completedCount / totalCount) * 100;
+  // const progressPercentage = (completedCount / totalCount) * 100; // Unused for now
 
   return (
     <div className="flex flex-col gap-y-16 xl:flex-row w-[90%] justify-between mx-auto mt-20">
       {/* LEFT SECTION (60%) - Learning Path */}
       <div className="xl:w-[65%] max-w-5xl mx-auto">
         <LearningSummary />
+        {/* If no syllabus found (and not loading), show a friendly CTA */}
+        {!isLoading && syllabuses.length === 0 && (
+          <div className="mt-8">
+            <Card className="p-6 border border-rose-100 bg-white rounded-2xl shadow-sm">
+              <h3 className="text-lg font-bold text-[#F66868]">
+                Bạn chưa có giáo trình
+              </h3>
+              <p className="text-sm text-gray-600 mt-2">
+                Hãy tạo giáo trình cá nhân hoá để bắt đầu lộ trình học tập phù
+                hợp với bạn.
+              </p>
+              <div className="mt-4">
+                <Button
+                  size="lg"
+                  className="bg-[#F66868] text-white hover:bg-[#e25757] px-4 py-2 rounded-xl"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  🤖 Tạo giáo trình cá nhân hoá
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
         {isLoading && (
           <div className="text-center text-lg mt-10">
             Loading learning path...
@@ -385,61 +398,11 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, 
               <Button
                 size="lg"
                 className="bg-[#F66868] text-xl hover:bg-[#e25757] text-white px-5 py-2 rounded-xl shadow-md transition-all"
-                onClick={() => setIsModalOpen(true)} // Open modal
+                onClick={() => setIsModalOpen(true)}
               >
                 🤖 Tạo giáo trình cá nhân hoá
               </Button>
             </div>
-          </Card>
-
-          {/* Tiến độ học tập */}
-          <Card className="p-6 rounded-2xl bg-white border border-[#F66868]/20">
-            <h2 className="text-2xl font-semibold text-[#F66868] mb-5 flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-[#F66868]" />
-              Tiến độ học tập
-            </h2>
-
-            {user ? (
-              <>
-                {/* Thanh tiến độ */}
-                <div className="relative mb-3">
-                  <Progress
-                    value={progressPercentage}
-                    className="h-4 bg-[#fde3e3] rounded-full overflow-hidden"
-                  />
-                  <div className="absolute inset-0 flex justify-center items-center text-xs font-medium text-gray-800/60">
-                    {Math.round(progressPercentage)}%
-                  </div>
-                </div>
-
-                {/* Thông tin chi tiết */}
-                <div className="flex flex-row items-center justify-between">
-                  <p className="text-sm text-gray-700 text-center">
-                    🎯 <span className="font-semibold">{completedCount}</span> /{" "}
-                    <span className="font-semibold">{totalCount}</span>
-                  </p>
-
-                  <div className="flex justify-center">
-                    <Button
-                      variant="outline"
-                      className="border-[#F66868]/40 text-[#F66868] hover:bg-[#F66868] hover:text-white transition-all duration-300 bg-transparent"
-                    >
-                      Xem lộ trình chi tiết
-                    </Button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-6 text-center text-gray-600">
-                <Lock className="w-8 h-8 text-[#F66868]/70 mb-3" />
-                <p className="text-lg mb-4">
-                  Vui lòng đăng nhập để xem tiến độ học tập của bạn.
-                </p>
-                <Button className="bg-[#F66868] text-lg hover:bg-[#e25757] text-white px-5">
-                  Đăng nhập ngay
-                </Button>
-              </div>
-            )}
           </Card>
         </div>
       </div>

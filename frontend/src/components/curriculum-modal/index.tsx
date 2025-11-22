@@ -13,10 +13,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useUserStore } from "@/store/useUserStore";
-import { Loader2, AlertCircle } from "lucide-react";
+// Removed the external store import to prevent compilation errors
+import { Loader2, AlertCircle, Sparkles } from "lucide-react";
 
-// 1. Define the type for the data we expect from the API
+// --- Types ---
+
+// Data structure coming from the Backend (FastAPI)
 interface LearningPreferenceData {
   id: number;
   user_id: number;
@@ -29,6 +31,7 @@ interface LearningPreferenceData {
   updated_at: string;
 }
 
+// Data structure used in the Frontend Form
 export interface CurriculumFormData {
   target: string;
   freetime: string;
@@ -41,7 +44,8 @@ interface CurriculumModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: CurriculumFormData) => void;
-  isLoading?: boolean; // This is for the SUBMIT loading
+  isLoading?: boolean;
+  userId?: number; // Added userId as a prop to replace the store dependency
 }
 
 const PROFICIENCY_LEVELS = [
@@ -61,7 +65,9 @@ export default function CurriculumModal({
   onClose,
   onSubmit,
   isLoading = false,
+  userId, // Receive userId from parent
 }: CurriculumModalProps) {
+  // Form State
   const [formData, setFormData] = useState<CurriculumFormData>({
     target: "",
     freetime: "",
@@ -69,31 +75,30 @@ export default function CurriculumModal({
     hope: "",
     skill: 1,
   });
-  const { user } = useUserStore();
 
-  // 2. Add local state for fetching data
+  // Data Fetching State
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // 3. Fix the useEffect hook
+  // --- Effect: Fetch Preferences on Open ---
   useEffect(() => {
-    // Don't fetch if the modal isn't open or user isn't loaded
-    if (!isOpen || !user) {
+    // Only fetch if modal is open and we have a valid userId
+    if (!isOpen || !userId) {
       return;
     }
 
     const fetchUserPreference = async () => {
       setIsFetching(true);
       setFetchError(null);
+
       try {
         const response = await fetch(
-          // This GET endpoint needs to return the user's *single* preference object
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/preferences?user_id=${user.id}`
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/preferences?user_id=${userId}`
         );
 
-        // If user has no preferences yet, API might return 404, which is OK.
+        // Case 1: User exists but has no preferences yet (404)
+        // We treat this as success but keep the form empty.
         if (response.status === 404) {
-          // User is new, just use the default empty form
           setFormData({
             target: "",
             freetime: "",
@@ -104,13 +109,14 @@ export default function CurriculumModal({
           return;
         }
 
+        // Case 2: Actual Server Error
         if (!response.ok) {
           throw new Error("Failed to fetch user preferences");
         }
 
+        // Case 3: Success - Pre-fill the form
         const data: LearningPreferenceData = await response.json();
 
-        // Populate the form with data from the server
         setFormData({
           target: data.learning_goal || "",
           freetime: data.available_time || "",
@@ -119,14 +125,17 @@ export default function CurriculumModal({
           skill: data.skill || 1,
         });
       } catch (err: any) {
-        setFetchError(err.message);
+        console.error("Error fetching preferences:", err);
+        setFetchError("Không thể tải thông tin cũ. Vui lòng nhập mới.");
       } finally {
         setIsFetching(false);
       }
     };
 
     fetchUserPreference();
-  }, [user, isOpen]); // Re-run when the user is loaded OR the modal is opened
+  }, [isOpen, userId]);
+
+  // --- Handlers ---
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -145,46 +154,49 @@ export default function CurriculumModal({
     }));
   };
 
-  // This function is called by the "Tạo giáo trình" button
   const handleSubmit = () => {
-    // The onSubmit prop will be a function passed from the parent component
-    // that knows how to call the POST /api/user/preferences endpoint
     onSubmit(formData);
   };
+
+  // --- Render ---
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-3 pb-2">
           <DialogTitle className="text-2xl font-bold text-[#F66868] flex items-center gap-2">
-            <span className="text-3xl">🤖</span>
+            <Sparkles className="h-6 w-6" />
             <span>Tạo giáo trình cá nhân hoá</span>
           </DialogTitle>
           <DialogDescription className="text-base text-gray-600 leading-relaxed">
-            Điền thông tin dưới đây để AI tạo ra một giáo trình học tập phù hợp
-            với bạn
+            Điền thông tin dưới đây để AI thiết kế lộ trình học tập phù hợp nhất
+            với bạn.
           </DialogDescription>
         </DialogHeader>
 
-        {/* 4. Handle Fetching and Error states */}
+        {/* --- State 1: Loading Data --- */}
         {isFetching ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-2">
-            <Loader2 className="animate-spin text-[#F66868]" size={32} />
-            <p className="text-gray-600">Đang tải dữ liệu của bạn...</p>
-          </div>
-        ) : fetchError ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <AlertCircle className="text-red-500" size={32} />
-            <p className="text-red-700 font-semibold">Lỗi khi tải dữ liệu</p>
-            <p className="text-red-600 text-sm">{fetchError}</p>
+          <div className="flex flex-col items-center justify-center h-64 gap-3">
+            <Loader2 className="animate-spin text-[#F66868]" size={40} />
+            <p className="text-gray-500 font-medium">
+              Đang tải thông tin cá nhân...
+            </p>
           </div>
         ) : (
-          // 5. Form Content (only shows if not fetching and no error)
+          /* --- State 2: Form Content (Show if loaded or error) --- */
           <div className="space-y-6 pt-2">
-            {/* Proficiency Level */}
+            {/* Error Banner (Non-blocking, just informative) */}
+            {fetchError && (
+              <div className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg text-orange-700 text-sm">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <p>{fetchError}</p>
+              </div>
+            )}
+
+            {/* Proficiency Level Selector */}
             <fieldset
               className="space-y-4 p-5 bg-gradient-to-br from-red-50 to-orange-50 rounded-xl border border-red-100"
-              disabled={isFetching || isLoading}
+              disabled={isLoading}
             >
               <Label className="text-base font-semibold text-gray-800 flex items-center gap-2">
                 <span className="text-xl">🎓</span>
@@ -196,15 +208,15 @@ export default function CurriculumModal({
                     key={level}
                     type="button"
                     onClick={() => handleProficiencyChange(level)}
-                    className={`p-3 rounded-xl border-2 transition-all duration-200 text-center transform hover:scale-105 disabled:opacity-50 ${
+                    className={`p-2 rounded-xl border-2 transition-all duration-200 text-center transform hover:scale-105 disabled:opacity-50 ${
                       formData.skill === level
                         ? "border-[#F66868] bg-gradient-to-br from-[#F66868] to-[#e25757] text-white shadow-lg shadow-red-200"
                         : "border-gray-200 bg-white text-gray-700 hover:border-[#F66868] hover:shadow-md"
                     }`}
                   >
                     <div className="font-bold text-lg">{level}</div>
-                    <div className="text-xs mt-1 leading-tight font-medium">
-                      {label.split(" ")[0]}
+                    <div className="text-[10px] mt-1 leading-tight font-medium line-clamp-2">
+                      {label}
                     </div>
                   </button>
                 ))}
@@ -221,18 +233,18 @@ export default function CurriculumModal({
             </fieldset>
 
             {/* Target Field */}
-            <fieldset className="space-y-3" disabled={isFetching || isLoading}>
+            <fieldset className="space-y-3" disabled={isLoading}>
               <Label
                 htmlFor="target"
                 className="text-base font-semibold text-gray-800 flex items-center gap-2"
               >
                 <span className="text-xl">🎯</span>
-                Mục tiêu học tập và các chủ đề muốn học
+                Mục tiêu học tập
               </Label>
               <Input
                 id="target"
                 name="target"
-                placeholder="Ví dụ: Thành thạo Ngôn ngữ Kí hiệu cơ bản về chủ đề động vật trong 3 tháng"
+                placeholder="Ví dụ: Giao tiếp cơ bản, thi chứng chỉ, học từ vựng y tế..."
                 value={formData.target}
                 onChange={handleInputChange}
                 required
@@ -241,7 +253,7 @@ export default function CurriculumModal({
             </fieldset>
 
             {/* Freetime Field */}
-            <fieldset className="space-y-3" disabled={isFetching || isLoading}>
+            <fieldset className="space-y-3" disabled={isLoading}>
               <Label
                 htmlFor="freetime"
                 className="text-base font-semibold text-gray-800 flex items-center gap-2"
@@ -252,7 +264,7 @@ export default function CurriculumModal({
               <Input
                 id="freetime"
                 name="freetime"
-                placeholder="Ví dụ: 1-2 giờ mỗi ngày, 5 ngày một tuần"
+                placeholder="Ví dụ: 30 phút mỗi ngày, 2 giờ cuối tuần..."
                 value={formData.freetime}
                 onChange={handleInputChange}
                 required
@@ -261,18 +273,18 @@ export default function CurriculumModal({
             </fieldset>
 
             {/* Schedule Field */}
-            <fieldset className="space-y-3" disabled={isFetching || isLoading}>
+            <fieldset className="space-y-3" disabled={isLoading}>
               <Label
                 htmlFor="schedule"
                 className="text-base font-semibold text-gray-800 flex items-center gap-2"
               >
                 <span className="text-xl">📅</span>
-                Lịch trình học tập
+                Lịch trình học tập mong muốn
               </Label>
               <Input
                 id="schedule"
                 name="schedule"
-                placeholder="Ví dụ: Sáng 8-9 giờ và chiều 5-6 giờ"
+                placeholder="Ví dụ: Tối thứ 2-4-6 lúc 8h, Sáng chủ nhật..."
                 value={formData.schedule}
                 onChange={handleInputChange}
                 required
@@ -280,47 +292,45 @@ export default function CurriculumModal({
               />
             </fieldset>
 
-            {/* Hope/Expectations Field */}
-            <fieldset className="space-y-3" disabled={isFetching || isLoading}>
+            {/* Expectations Field */}
+            <fieldset className="space-y-3" disabled={isLoading}>
               <Label
                 htmlFor="hope"
                 className="text-base font-semibold text-gray-800 flex items-center gap-2"
               >
                 <span className="text-xl">💭</span>
-                Kỳ vọng & Mong muốn
+                Kỳ vọng chi tiết
               </Label>
               <Textarea
                 id="hope"
                 name="hope"
-                placeholder="Ví dụ: Muốn giao tiếp cơ bản, học từ vựng y tế, tăng tốc độ học nhanh..."
+                placeholder="Ví dụ: Tôi muốn học chậm chắc, tập trung nhiều vào thực hành ngón tay..."
                 value={formData.hope}
                 onChange={handleInputChange}
                 required
-                className="text-base resize-none border-2 focus:border-[#F66868] focus:ring-2 focus:ring-[#F66868]/20 transition-all min-h-[120px] disabled:opacity-50"
-                rows={4}
+                className="text-base resize-none border-2 focus:border-[#F66868] focus:ring-2 focus:ring-[#F66868]/20 transition-all min-h-[100px] disabled:opacity-50"
               />
             </fieldset>
 
-            {/* Submit Buttons */}
-            <div className="flex gap-3 pt-4 sticky bottom-0 bg-white pb-2">
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 sticky bottom-0 bg-white pb-2 border-t border-gray-100 mt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 className="flex-1 text-base h-12 border-2 hover:bg-gray-50 font-semibold"
-                disabled={isLoading || isFetching}
+                disabled={isLoading}
               >
                 Hủy
               </Button>
               <Button
-                // 6. Fix the onClick handler
                 onClick={handleSubmit}
                 className="flex-1 bg-gradient-to-r from-[#F66868] to-[#e25757] hover:from-[#e25757] hover:to-[#d04646] text-white text-base h-12 font-semibold shadow-lg shadow-red-200 hover:shadow-xl transition-all duration-200"
-                disabled={isLoading || isFetching}
+                disabled={isLoading}
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">
-                    <Loader2 className="animate-spin" /> {/* Changed icon */}
+                    <Loader2 className="animate-spin h-5 w-5" />
                     Đang tạo...
                   </span>
                 ) : (

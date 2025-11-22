@@ -1,5 +1,4 @@
 from google.adk.agents import Agent
-from ...shared.tools import get_words_tool
 from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, SseConnectionParams
 from ..prompt import prompt_quiz_agent
 PATH_TO_YOUR_MCP_SERVER_SCRIPT = "server.py"

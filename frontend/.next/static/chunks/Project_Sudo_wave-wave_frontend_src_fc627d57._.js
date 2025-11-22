@@ -2779,53 +2779,35 @@ function MapPage() {
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                 className: "flex flex-row items-center justify-between",
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                        className: "text-sm text-gray-700 text-center",
-                                                        children: [
-                                                            "🎯 ",
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                className: "font-semibold",
-                                                                children: completedCount
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
-                                                                lineNumber: 418,
-                                                                columnNumber: 24
-                                                            }, this),
-                                                            " /",
-                                                            " ",
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                className: "font-semibold",
-                                                                children: totalCount
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
-                                                                lineNumber: 419,
-                                                                columnNumber: 21
-                                                            }, this)
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
-                                                        lineNumber: 417,
-                                                        columnNumber: 19
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "flex justify-center",
-                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                            variant: "outline",
-                                                            className: "border-[#F66868]/40 text-[#F66868] hover:bg-[#F66868] hover:text-white transition-all duration-300 bg-transparent",
-                                                            children: "Xem lộ trình chi tiết"
+                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                                    className: "text-sm text-gray-700 text-center",
+                                                    children: [
+                                                        "🎯 ",
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                            className: "font-semibold",
+                                                            children: completedCount
                                                         }, void 0, false, {
                                                             fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
-                                                            lineNumber: 423,
+                                                            lineNumber: 418,
+                                                            columnNumber: 24
+                                                        }, this),
+                                                        " /",
+                                                        " ",
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                            className: "font-semibold",
+                                                            children: totalCount
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
+                                                            lineNumber: 419,
                                                             columnNumber: 21
                                                         }, this)
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
-                                                        lineNumber: 422,
-                                                        columnNumber: 19
-                                                    }, this)
-                                                ]
-                                            }, void 0, true, {
+                                                    ]
+                                                }, void 0, true, {
+                                                    fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
+                                                    lineNumber: 417,
+                                                    columnNumber: 19
+                                                }, this)
+                                            }, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
                                                 lineNumber: 416,
                                                 columnNumber: 17
@@ -2838,7 +2820,7 @@ function MapPage() {
                                                 className: "w-8 h-8 text-[#F66868]/70 mb-3"
                                             }, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
-                                                lineNumber: 434,
+                                                lineNumber: 425,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2846,7 +2828,7 @@ function MapPage() {
                                                 children: "Vui lòng đăng nhập để xem tiến độ học tập của bạn."
                                             }, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
-                                                lineNumber: 435,
+                                                lineNumber: 426,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Project_Sudo$2f$wave$2d$wave$2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2854,13 +2836,13 @@ function MapPage() {
                                                 children: "Đăng nhập ngay"
                                             }, void 0, false, {
                                                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
-                                                lineNumber: 438,
+                                                lineNumber: 429,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
-                                        lineNumber: 433,
+                                        lineNumber: 424,
                                         columnNumber: 15
                                     }, this)
                                 ]
@@ -2888,7 +2870,7 @@ function MapPage() {
                 isLoading: isSubmitting
             }, void 0, false, {
                 fileName: "[project]/Project_Sudo/wave-wave/frontend/src/app/study/map/page.tsx",
-                lineNumber: 447,
+                lineNumber: 438,
                 columnNumber: 7
             }, this)
         ]

@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   CheckCircle2,
-  Lock,
   Circle,
   SquarePen,
   GraduationCap,
@@ -13,7 +12,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { SyllabusInfo } from "../../map/page";
-import { useState } from "react";
+import { useEffect, useState } from "react"; // Import useEffect
 import ChoiceModal from "./choice-modal";
 import CurriculumModal from "@/components/curriculum-modal";
 import { useRouter } from "next/navigation";
@@ -31,37 +30,66 @@ interface Lesson {
   level: "Cơ bản";
 }
 
-// 2. DELETE the hardcoded 'lessons' array.
-// const lessons: Lesson[] = [ ... ]; // <-- DELETE THIS
+// Define the shape of the data coming from FastAPI
+export interface UserPreference {
+  learning_goal?: string;
+  available_time?: string;
+  schedule?: string;
+  expectations?: string;
+  skill?: number;
+}
 
-// 3. UPDATE the props to accept the 'lessons' array
 interface ProgressSidebarProps {
-  lessons: Lesson[]; // <-- ADD THIS
+  lessons: Lesson[];
   syllabus: SyllabusInfo | undefined;
   selectedLessonId?: number;
   onSelectLesson?: (id: number) => void;
 }
 
 export default function ProgressSidebar({
-  lessons, // <-- 4. ACCEPT the 'lessons' prop
+  lessons,
   syllabus,
   selectedLessonId,
   onSelectLesson,
 }: ProgressSidebarProps) {
   const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
   const [isCurriculumModalOpen, setIsCurriculumModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Added submission state
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useUserStore();
-  const router = useRouter(); // ⭐️ Hook for navigation
+  const router = useRouter();
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
-  // 5. CALCULATE progress dynamically from the 'lessons' prop
+  // 🆕 State to store existing user preferences
+  const [userPreferences, setUserPreferences] = useState<UserPreference | null>(
+    null
+  );
+
+  // 🆕 Effect: Fetch existing preferences when user is available
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      if (!user?.id) return;
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/preferences?user_id=${user.id}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setUserPreferences(data);
+        }
+      } catch (error) {
+        // It's okay if this fails (user might be new), just log it silently
+        console.log("No existing preferences found or error fetching.");
+      }
+    };
+
+    fetchPreferences();
+  }, [user?.id]);
+
   const totalLessons = lessons.length;
   const completedCount = lessons.filter(
     (l) => l.lesson_status === "complete"
   ).length;
-  console.log(lessons);
-  // More accurate vocabulary calculation
+
   const totalVocabulary = lessons.reduce(
     (acc, lesson) => acc + (lesson.vocabulary_count || 0),
     0
@@ -77,6 +105,7 @@ export default function ProgressSidebar({
 
   const vocabPercentage =
     totalVocabulary > 0 ? (vocabularyComplete / totalVocabulary) * 100 : 0;
+
   const handleScheduleSubmit = async (formData: {
     freetime: string;
     schedule: string;
@@ -88,7 +117,7 @@ export default function ProgressSidebar({
 - Lịch học mong muốn: ${formData.schedule}
 - Số bài học: ${totalLessons}
 - Số từ vựng: ${totalVocabulary}
-Vui lòng đề xuất một thời gian biểu học tập thật hợp lí.`;
+Vui lòng đề xuất một thời gian biểu học tập thật hợp lí. Hãy tạo và không hỏi gì thêm`;
       const saveRes = await fetch(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/preferences`,
         {
@@ -96,12 +125,23 @@ Vui lòng đề xuất một thời gian biểu học tập thật hợp lí.`;
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             user_id: user?.id,
+            // We only update time/schedule here, but the backend upsert handles partial updates if implemented,
+            // otherwise you might need to pass existing values for other fields if your backend overwrites nulls.
+            available_time: formData.freetime,
+            schedule: formData.schedule,
             query: aiQuery,
           }),
         }
       );
 
       if (!saveRes.ok) throw new Error("Failed to save schedule");
+
+      // 🆕 Update local state immediately so UI reflects changes without refresh
+      setUserPreferences((prev) => ({
+        ...prev,
+        available_time: formData.freetime,
+        schedule: formData.schedule,
+      }));
 
       alert("✅ Lịch học đã được cập nhật thành công!");
       setIsScheduleModalOpen(false);
@@ -112,6 +152,7 @@ Vui lòng đề xuất một thời gian biểu học tập thật hợp lí.`;
       setIsSubmitting(false);
     }
   };
+
   const handleCurriculumSubmit = async (formData: {
     target: string;
     freetime: string;
@@ -142,16 +183,18 @@ Vui lòng đề xuất một thời gian biểu học tập thật hợp lí.`;
       if (!saveRes.ok)
         throw new Error("Failed to save user learning preference");
 
+      // 🆕 Update local state
+      const savedPrefs = await saveRes.json();
+      setUserPreferences(savedPrefs);
+
       // 2️⃣ Step 2: Build AI Query (Vietnamese version)
       const aiQuery = `Dựa trên các yêu cầu sau, hãy tạo một giáo trình học cá nhân hoá phù hợp:
 - Mục tiêu học tập: ${formData.target}
-- Thời gian rảnh có thể học: ${formData.freetime}
-- Lịch học mong muốn: ${formData.schedule}
 - Kỳ vọng khi hoàn thành khoá học: ${formData.hope}
 - Trình độ kỹ năng hiện tại: ${formData.skill}
 
-Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, bao gồm các bài học cụ thể và các mốc tiến độ quan trọng.`;
-      console.log(aiQuery);
+Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng. Hãy tạo và không hỏi gì thêm`;
+
       // 3️⃣ Step 3: Send to AI backend
       const aiRes = await fetch(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/api/generate-curriculum`,
@@ -159,9 +202,7 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, 
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            // --- THIS IS THE FIX ---
-            user_id: String(user?.id), // Convert the number to a string
-            // -----------------------
+            user_id: String(user?.id),
             query: aiQuery,
           }),
         }
@@ -172,7 +213,6 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, 
       }
 
       const aiResult = await aiRes.json();
-      console.log("🎯 AI Curriculum:", aiResult);
 
       // 4️⃣ Step 4: Extract SyllabusID from response
       const responseText = aiResult.response || "";
@@ -180,16 +220,10 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, 
 
       if (syllabusMatch && syllabusMatch[1]) {
         const syllabusId = syllabusMatch[1];
-        console.log(`✅ Extracted SyllabusID: ${syllabusId}`);
-
         setIsCurriculumModalOpen(false);
         alert("🎓 Giáo trình cá nhân hoá đã được tạo thành công!");
         router.push(`/study/learn/syllabus/${syllabusId}`);
       } else {
-        console.warn(
-          "⚠️ Không tìm thấy SyllabusID trong phản hồi AI:",
-          responseText
-        );
         alert("❌ Có lỗi xảy ra khi tạo giáo trình. Vui lòng thử lại.");
       }
     } catch (err) {
@@ -219,7 +253,7 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, 
                     Giáo trình của bạn
                   </span>
                 </div>
-                {syllabus && Number(syllabus.id) > 11 && (
+                {user && (
                   <Button
                     size="sm"
                     variant="default"
@@ -400,7 +434,9 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, 
         onClose={() => setIsCurriculumModalOpen(false)}
         onSubmit={handleCurriculumSubmit}
         isLoading={isSubmitting}
+        // 🆕 PASS DATA HERE
       />
+
       <ScheduleModal
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
@@ -409,6 +445,8 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng, 
         userId={user?.id}
         totalLessons={totalLessons}
         totalVocabulary={totalVocabulary}
+        // 🆕 PASS DATA HERE
+        initialData={userPreferences}
       />
     </div>
   );

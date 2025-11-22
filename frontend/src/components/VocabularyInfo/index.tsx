@@ -10,26 +10,36 @@ import {
   Sparkles,
   Camera,
   Loader2,
+  CheckCircle2, // Added for success icon
 } from "lucide-react";
-// --- THÊM useCallback ---
 import { useEffect, useState, useRef, useCallback } from "react";
-// ---
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useUserStore } from "@/store/useUserStore";
-import MarkdownRenderer from "../MarkdownRender";
+
+// --- MOCKS FOR PREVIEW (Uncomment real imports in your project) ---
+// import { useUserStore } from "@/store/useUserStore";
+// import MarkdownRenderer from "../MarkdownRender";
+
+const useUserStore = () => ({
+  user: { id: "guest-user", name: "Guest" },
+});
+
+const MarkdownRenderer = ({ content }: { content: string }) => (
+  <div className="whitespace-pre-wrap">{content}</div>
+);
+// ------------------------------------------------------------------
 
 // --- Cấu hình WebSocket ---
-const WEBSOCKET_URL = "ws://localhost:8001/ws/predict-stream/";
+const WEBSOCKET_URL =
+  process.env.NEXT_PUBLIC_WEBSOCKET_URL ||
+  "ws://localhost:8001/ws/stream-predict2/";
 
-// --- THAY ĐỔI 1: CẬP NHẬT LÊN 20 FPS ---
-// 1000ms / 20 FPS = 50ms
-const FRAME_INTERVAL_MS = 50;
-// ---
+// --- 30 FPS Configuration ---
+const FRAME_INTERVAL_MS = 33;
 
 interface VocabularyInfoProps {
   word: string;
@@ -64,6 +74,7 @@ export default function VocabularyInfo({
   const { user } = useUserStore();
 
   const [prediction, setPrediction] = useState<SignPrediction | null>(null);
+  const [isCorrect, setIsCorrect] = useState(false); // New state for success
   const [error, setError] = useState<string | null>(null);
   const [framesCollected, setFramesCollected] = useState(0);
   const [framesNeeded, setFramesNeeded] = useState(30);
@@ -74,59 +85,41 @@ export default function VocabularyInfo({
   const wsRef = useRef<WebSocket | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // --- HÀM GỬI KHUNG HÌNH (GIỮ NGUYÊN) ---
+  // --- SEND FRAME FUNCTION ---
   const sendFrame = () => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      console.log("WebSocket not ready, state:", wsRef.current?.readyState);
-      return;
-    }
-
-    if (!videoRef.current || !canvasRef.current) {
-      console.log("Video or canvas ref not ready");
-      return;
-    }
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    if (!videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
-
-    // Check if video is ready
     if (
       video.videoWidth === 0 ||
       video.videoHeight === 0 ||
       video.readyState < 2
-    ) {
-      console.log("Video not ready yet:", {
-        width: video.videoWidth,
-        height: video.videoHeight,
-        readyState: video.readyState,
-      });
+    )
       return;
-    }
 
     const canvas = canvasRef.current;
     const context = canvas.getContext("2d");
-    if (!context) {
-      console.log("Canvas context not available");
-      return;
-    }
+    if (!context) return;
 
     try {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const frameData = canvas.toDataURL("image/jpeg", 0.8);
 
-      console.log("Sending frame, size:", frameData.length);
-      wsRef.current.send(frameData);
+      // Get data URL and strip header
+      const fullDataUrl = canvas.toDataURL("image/jpeg", 0.8);
+      const base64Data = fullDataUrl.split(",")[1];
+
+      wsRef.current.send(base64Data);
     } catch (err) {
       console.error("Error sending frame:", err);
     }
   };
-  // ---
 
-  // --- HÀM DỌN DẸP (GIỮ NGUYÊN) ---
+  // --- CLEANUP FUNCTION ---
   const cleanupCamera = useCallback(() => {
-    console.log("Đang chạy dọn dẹp camera...");
-
+    console.log("Cleaning up camera...");
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -145,92 +138,93 @@ export default function VocabularyInfo({
     setIsCameraActive((isActive) => {
       if (isActive) {
         setPrediction(null);
+        setIsCorrect(false);
         setError(null);
         setFramesCollected(0);
       }
       return false;
     });
   }, []);
-  // ---
 
-  // --- THAY ĐỔI 2: KÍCH HOẠT LẠI WEBSOCKET KHI MỞ CAMERA ---
+  // --- CAMERA & WEBSOCKET HANDLER ---
   const handleCameraAccess = useCallback(async () => {
     if (isCameraActive) {
-      // --- Logic TẮT (GIỮ NGUYÊN) ---
-      console.log("Đang TẮT camera (do người dùng nhấp)...");
       cleanupCamera();
     } else {
-      // --- Logic MỞ (ĐÃ KHÔI PHỤC) ---
-      console.log("Đang MỞ camera VÀ KẾT NỐI...");
       try {
-        // 1. Lấy stream video
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
         });
-        streamRef.current = stream; // LƯU stream vào ref
+        streamRef.current = stream;
 
-        // 2. KẾT NỐI WEBSOCKET
-        wsRef.current = new WebSocket(WEBSOCKET_URL);
+        // --- FIX: Pass expected_word in URL ---
+        const baseUrl = WEBSOCKET_URL.endsWith("/")
+          ? WEBSOCKET_URL.slice(0, -1)
+          : WEBSOCKET_URL;
+        const wsUrl = `${baseUrl}/?expected_word=${encodeURIComponent(word)}`;
 
-        // 3. Định nghĩa các trình xử lý
+        console.log("Connecting to:", wsUrl);
+        wsRef.current = new WebSocket(wsUrl);
+
         wsRef.current.onopen = () => {
-          console.log("WebSocket đã kết nối!");
-          setIsCameraActive(true); // <-- Kích hoạt re-render để hiển thị video
+          console.log("WebSocket connected");
+          setIsCameraActive(true);
           setError(null);
-          // BẮT ĐẦU GỬI KHUNG HÌNH (với 20 FPS)
+          setIsCorrect(false);
           intervalRef.current = setInterval(sendFrame, FRAME_INTERVAL_MS);
         };
 
         wsRef.current.onmessage = (event) => {
-          console.log("WebSocket message received:", event.data);
           try {
             const data = JSON.parse(event.data);
-            console.log("Parsed data:", data);
 
             if (data.status === "predicted") {
               setPrediction({
                 label_text: data.label_text,
                 confidence: data.confidence,
               });
+
+              // --- FIX: Handle Success State ---
+              if (data.is_correct) {
+                setIsCorrect(true);
+              } else {
+                setIsCorrect(false);
+              }
+
               setFramesCollected(0);
+            } else if (data.status === "success") {
+              setIsCorrect(true);
             } else if (data.status === "collecting") {
-              console.log(
-                `Collecting frames: ${data.frames_collected}/${data.frames_needed}`
-              );
               setFramesCollected(data.frames_collected);
               setFramesNeeded(data.frames_needed);
-            } else if (data.status === "waiting") {
-              console.log("Waiting:", data.message);
             } else if (data.status === "error") {
-              console.error("Backend error:", data.message);
               setError(data.message);
             }
           } catch (err) {
-            console.error("Failed to parse WebSocket message:", err);
+            console.error("Failed to parse message:", err);
           }
         };
 
-        wsRef.current.onclose = () => {
-          console.log("WebSocket BỊ NGẮT (bất ngờ). Đang dọn dẹp.");
-          cleanupCamera();
-          setError("Kết nối đã mất. Vui lòng thử lại.");
+        wsRef.current.onclose = (event) => {
+          if (!event.wasClean) {
+            cleanupCamera();
+            setError("Mất kết nối máy chủ.");
+          }
         };
 
         wsRef.current.onerror = (err) => {
-          console.error("Lỗi WebSocket:", err);
-          setError("Lỗi kết nối. Backend có đang chạy không?");
+          console.error("WebSocket error:", err);
+          setError("Lỗi kết nối.");
         };
       } catch (err) {
-        console.error("Lỗi truy cập camera:", err);
-        setError("Không thể truy cập camera. Vui lòng kiểm tra quyền.");
+        console.error("Camera error:", err);
+        setError("Không thể truy cập camera.");
       }
     }
-  }, [isCameraActive, cleanupCamera]);
-  // ---
+  }, [isCameraActive, cleanupCamera, word]);
 
-  // --- CÁC useEffect (GIỮ NGUYÊN) ---
+  // --- EFFECTS ---
 
-  // useEffect này CHỈ xử lý bookmark/share
   useEffect(() => {
     if (bookmarked || isShare) {
       const timer = setTimeout(() => {
@@ -241,43 +235,30 @@ export default function VocabularyInfo({
     }
   }, [bookmarked, isShare]);
 
-  // useEffect này CHỈ xử lý khi `word` thay đổi
   useEffect(() => {
-    console.log("Từ đã thay đổi, dọn dẹp context...");
     setShowContext(false);
     setContextText("");
     setSessionId(null);
-    console.log("Từ đã thay đổi, dọn dẹp camera...");
+    setIsCorrect(false);
     cleanupCamera();
-  }, [word, cleanupCamera]); // <-- Sửa lại dependency (thêm cleanupCamera)
+  }, [word, cleanupCamera]);
 
-  // useEffect này CHỈ dọn dẹp khi component unmount
   useEffect(() => {
-    return () => {
-      console.log("Component unmount, đang dọn dẹp camera...");
-      cleanupCamera();
-    };
-  }, [cleanupCamera]); // <-- Sửa lại dependency
+    return () => cleanupCamera();
+  }, [cleanupCamera]);
 
-  // useEffect này XỬ LÝ MÀN HÌNH ĐEN (GIỮ NGUYÊN)
   useEffect(() => {
     if (isCameraActive && videoRef.current && streamRef.current) {
-      console.log("Đang gán stream vào video element...");
       videoRef.current.srcObject = streamRef.current;
-      videoRef.current.play().catch((err) => {
-        console.error("Video play() bị lỗi:", err);
-      });
+      videoRef.current.play().catch(console.error);
     }
   }, [isCameraActive]);
-  // ---
 
-  // Handle context toggle (GIỮ NGUYÊN)
   const handleContextToggle = async () => {
-    // ... (Toàn bộ logic context của bạn không thay đổi) ...
     if (!showContext) {
       setIsLoadingContext(true);
       setContextText("");
-      const prompt = `Khi nào sử dụng từ này, trong trường hợp, hoàn cảnh nào: "${word}"`;
+      const prompt = `Khi nào sử dụng từ này: "${word}"`;
       const API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
       try {
         const response = await fetch(`${API_URL}/api/chat`, {
@@ -289,15 +270,12 @@ export default function VocabularyInfo({
             session_id: sessionId,
           }),
         });
-        if (!response.ok) {
-          throw new Error("Failed to fetch context from API");
-        }
+        if (!response.ok) throw new Error("Failed");
         const data = await response.json();
         setContextText(data.response);
         setSessionId(data.session_id);
         setShowContext(true);
       } catch (error) {
-        console.error("Failed to fetch context:", error);
         setContextText("Lỗi: Không thể tải ngữ cảnh.");
         setShowContext(true);
       } finally {
@@ -308,10 +286,9 @@ export default function VocabularyInfo({
     }
   };
 
-  // --- PHẦN RETURN (JSX) (KHÔNG THAY ĐỔI) ---
   return (
     <div className="bg-white rounded-xl shadow-lg border-2 border-[#FF978E] overflow-hidden">
-      {/* Header Section with Actions */}
+      {/* Header */}
       <div className="bg-gradient-to-r from-[#f66868] to-[#FF978E] p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-3">
@@ -324,8 +301,6 @@ export default function VocabularyInfo({
               </div>
             )}
           </div>
-
-          {/* Action Buttons */}
           <TooltipProvider>
             <div className="flex gap-2">
               <Tooltip>
@@ -335,25 +310,24 @@ export default function VocabularyInfo({
                       setIsShare(true);
                       navigator.clipboard.writeText(window.location.href);
                     }}
-                    className="p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all duration-300 backdrop-blur-sm"
+                    className="p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all backdrop-blur-sm"
                   >
                     {isShare ? (
-                      <Check className="w-6 h-6 text-white" />
+                      <Check className="text-white" />
                     ) : (
-                      <Share className="w-6 h-6 text-white" />
+                      <Share className="text-white" />
                     )}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {isShare ? "Đã sao chép liên kết!" : "Chia sẻ"}
+                  {isShare ? "Đã sao chép!" : "Chia sẻ"}
                 </TooltipContent>
               </Tooltip>
-
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => setBookmarked(!bookmarked)}
-                    className="p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all duration-300 backdrop-blur-sm"
+                    className="p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all backdrop-blur-sm"
                   >
                     <Bookmark
                       className={`w-6 h-6 ${
@@ -372,7 +346,6 @@ export default function VocabularyInfo({
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Definition Section */}
         {definition && (
           <div className="bg-rose-50 rounded-xl p-5 border border-rose-200">
             <h3 className="text-sm font-bold text-[#C73B3B] uppercase tracking-wide mb-3 flex items-center gap-2">
@@ -383,9 +356,8 @@ export default function VocabularyInfo({
           </div>
         )}
 
-        {/* Two Column Layout: Video/Image + Camera */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column: Instructional Media */}
+          {/* Media Column */}
           {(videoUrl || imageUrl) && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -393,18 +365,15 @@ export default function VocabularyInfo({
                   <div className="w-1 h-5 bg-[#C73B3B] rounded-full"></div>
                   Hướng dẫn
                 </h3>
-
-                {/* Media Toggle */}
                 <div className="flex bg-rose-50 border border-rose-200 rounded-lg overflow-hidden">
                   {videoUrl && (
                     <button
                       onClick={() => setMediaMode("video")}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all cursor-pointer
-                        ${
-                          mediaMode === "video"
-                            ? "bg-[#C73B3B] text-white shadow-sm"
-                            : "text-[#C73B3B] hover:bg-rose-100"
-                        }`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all ${
+                        mediaMode === "video"
+                          ? "bg-[#C73B3B] text-white"
+                          : "text-[#C73B3B] hover:bg-rose-100"
+                      }`}
                     >
                       <Video className="w-3.5 h-3.5" /> Video
                     </button>
@@ -412,20 +381,17 @@ export default function VocabularyInfo({
                   {imageUrl && (
                     <button
                       onClick={() => setMediaMode("image")}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all cursor-pointer
-                        ${
-                          mediaMode === "image"
-                            ? "bg-[#C73B3B] text-white shadow-sm"
-                            : "text-[#C73B3B] hover:bg-rose-100"
-                        }`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all ${
+                        mediaMode === "image"
+                          ? "bg-[#C73B3B] text-white"
+                          : "text-[#C73B3B] hover:bg-rose-100"
+                      }`}
                     >
                       <ImageIcon className="w-3.5 h-3.5" /> Hình ảnh
                     </button>
                   )}
                 </div>
               </div>
-
-              {/* Media Display */}
               <div className="relative w-full rounded-xl overflow-hidden border-2 border-gray-200 shadow-md aspect-video bg-gray-100">
                 {mediaMode === "video" && videoUrl ? (
                   <video
@@ -433,57 +399,56 @@ export default function VocabularyInfo({
                     className="w-full h-full object-contain"
                     src={videoUrl}
                   />
-                ) : (
-                  imageUrl && (
-                    <img
-                      src={imageUrl}
-                      alt={`${word} illustration`}
-                      className="w-full h-full object-contain p-4"
-                      loading="lazy"
-                    />
-                  )
-                )}
+                ) : imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={word}
+                    className="w-full h-full object-contain p-4"
+                    loading="lazy"
+                  />
+                ) : null}
               </div>
             </div>
           )}
 
-          {/* Right Column: Practice Camera */}
+          {/* Camera Column */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-[#C73B3B] uppercase tracking-wide flex items-center gap-2">
                 <div className="w-1 h-5 bg-[#C73B3B] rounded-full"></div>
                 Luyện tập
               </h3>
-
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       onClick={handleCameraAccess}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 transform flex items-center gap-2 text-sm
-                        ${
-                          isCameraActive
-                            ? "bg-[#f66868] text-white shadow-lg scale-105"
-                            : "bg-rose-100 text-[#f66868] hover:bg-rose-200"
-                        }`}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm ${
+                        isCameraActive
+                          ? "bg-[#f66868] text-white shadow-lg scale-105"
+                          : "bg-rose-100 text-[#f66868] hover:bg-rose-200"
+                      }`}
                     >
                       <Camera className="w-4 h-4" />
                       {isCameraActive ? "Tắt camera" : "Bật camera"}
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    {isCameraActive
-                      ? "Dừng luyện tập"
-                      : "Bắt đầu luyện tập với camera"}
+                    {isCameraActive ? "Dừng luyện tập" : "Bắt đầu luyện tập"}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
 
-            {/* Camera Display */}
             {isCameraActive ? (
               <div className="space-y-4">
-                <div className="relative w-full rounded-xl overflow-hidden border-2 border-[#f66868] shadow-lg aspect-video bg-black">
+                <div
+                  className={`relative w-full rounded-xl overflow-hidden border-4 shadow-lg aspect-video bg-black transition-colors duration-300 ${
+                    isCorrect
+                      ? "border-green-500 shadow-green-200"
+                      : "border-[#f66868]"
+                  }`}
+                >
                   <video
                     ref={videoRef}
                     autoPlay
@@ -491,32 +456,60 @@ export default function VocabularyInfo({
                     playsInline
                     className="w-full h-full object-cover"
                   />
-                  {/* Recording Indicator */}
                   <div className="absolute top-3 right-3 flex items-center gap-2 bg-red-500 text-white px-3 py-1.5 rounded-full text-xs font-bold">
-                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>{" "}
                     REC
                   </div>
+                  {/* Success Overlay */}
+                  {isCorrect && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 pointer-events-none animate-in fade-in zoom-in duration-300">
+                      <CheckCircle2 className="w-16 h-16 text-green-400 drop-shadow-lg mb-2" />
+                      <span className="text-white font-bold text-xl drop-shadow-md">
+                        Chính xác!
+                      </span>
+                    </div>
+                  )}
                 </div>
-
                 <canvas ref={canvasRef} style={{ display: "none" }} />
 
-                {/* Prediction Results */}
                 {prediction && (
-                  <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
+                  <div
+                    className={`p-4 border-2 rounded-xl transition-colors duration-500 ${
+                      isCorrect
+                        ? "bg-green-50 border-green-500"
+                        : "bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200"
+                    }`}
+                  >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs text-green-600 font-medium mb-1">
-                          Nhận diện được:
+                        <p
+                          className={`text-xs font-bold mb-1 ${
+                            isCorrect ? "text-green-700" : "text-gray-500"
+                          }`}
+                        >
+                          {isCorrect ? "KẾT QUẢ:" : "AI NHÌN THẤY:"}
                         </p>
-                        <h4 className="text-2xl font-bold text-green-800">
-                          {prediction.label_text}
+                        <h4
+                          className={`text-2xl font-bold ${
+                            isCorrect ? "text-green-700" : "text-gray-800"
+                          }`}
+                        >
+                          {isCorrect ? "Chính xác! 🎉" : prediction.label_text}
                         </h4>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-green-600 font-medium mb-1">
-                          Độ chính xác:
+                        <p
+                          className={`text-xs font-medium mb-1 ${
+                            isCorrect ? "text-green-700" : "text-gray-500"
+                          }`}
+                        >
+                          Độ tin cậy:
                         </p>
-                        <p className="text-3xl font-bold text-green-700">
+                        <p
+                          className={`text-3xl font-bold ${
+                            isCorrect ? "text-green-700" : "text-gray-700"
+                          }`}
+                        >
                           {(prediction.confidence * 100).toFixed(0)}%
                         </p>
                       </div>
@@ -524,34 +517,37 @@ export default function VocabularyInfo({
                   </div>
                 )}
 
-                {/* Collection Progress */}
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                  {framesCollected > 0 ? (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm text-blue-700 font-medium">
-                        <span>Đang thu thập khung hình...</span>
-                        <span>
-                          {framesCollected}/{framesNeeded}
-                        </span>
+                {!isCorrect && (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                    {framesCollected > 0 ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm text-blue-700 font-medium">
+                          <span>Đang phân tích...</span>
+                          <span>
+                            {framesCollected}/{framesNeeded}
+                          </span>
+                        </div>
+                        <div className="w-full bg-blue-200 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-blue-600 h-full transition-all duration-300 rounded-full"
+                            style={{
+                              width: `${
+                                (framesCollected / framesNeeded) * 100
+                              }%`,
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-blue-200 rounded-full h-2 overflow-hidden">
-                        <div
-                          className="bg-blue-600 h-full transition-all duration-300 rounded-full"
-                          style={{
-                            width: `${(framesCollected / framesNeeded) * 100}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-blue-700 flex items-center justify-center gap-2 text-sm">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {prediction
-                        ? "Sẵn sàng nhận diện tiếp..."
-                        : "Đang khởi động AI..."}
-                    </p>
-                  )}
-                </div>
+                    ) : (
+                      <p className="text-blue-700 flex items-center justify-center gap-2 text-sm">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {prediction
+                          ? "Hãy thực hiện lại..."
+                          : "Đang khởi động AI..."}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {error && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -566,14 +562,13 @@ export default function VocabularyInfo({
                   Camera chưa được bật
                 </p>
                 <p className="text-gray-400 text-sm">
-                  Nhấn nút "Bật camera" để bắt đầu luyện tập
+                  Nhấn nút "Bật camera" để bắt đầu
                 </p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Context Button */}
         <div className="flex justify-center pt-4">
           <Button
             size="lg"
@@ -583,35 +578,29 @@ export default function VocabularyInfo({
           >
             {isLoadingContext ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Đang tải ngữ cảnh...
+                <Loader2 className="w-5 h-5 animate-spin" /> Đang tải...
               </>
             ) : showContext ? (
               <>
-                <Sparkles className="w-5 h-5" />
-                Ẩn ngữ cảnh
+                <Sparkles className="w-5 h-5" /> Ẩn ngữ cảnh
               </>
             ) : (
               <>
-                <Sparkles className="w-5 h-5" />
-                Xem ngữ cảnh sử dụng
+                <Sparkles className="w-5 h-5" /> Xem ngữ cảnh
               </>
             )}
           </Button>
         </div>
 
-        {/* Context Section */}
         {showContext && (
           <div className="bg-gradient-to-br from-rose-50 to-orange-50 border-2 border-rose-200 rounded-xl p-6 shadow-inner">
             <h3 className="text-sm font-bold text-[#C73B3B] uppercase tracking-wide mb-4 flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              Ngữ cảnh sử dụng
+              <Sparkles className="w-4 h-4" /> Ngữ cảnh sử dụng
             </h3>
             {isLoadingContext ? (
               <div className="space-y-3">
                 <div className="h-4 bg-rose-200 rounded animate-pulse"></div>
                 <div className="h-4 bg-rose-200 rounded animate-pulse w-5/6"></div>
-                <div className="h-4 bg-rose-200 rounded animate-pulse w-4/6"></div>
               </div>
             ) : contextText ? (
               <div className="prose prose-rose max-w-none">
@@ -619,7 +608,7 @@ export default function VocabularyInfo({
               </div>
             ) : (
               <p className="italic text-gray-500 text-center py-4">
-                Không có ngữ cảnh cho từ này.
+                Không có ngữ cảnh.
               </p>
             )}
           </div>

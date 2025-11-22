@@ -14,6 +14,8 @@ qdrant_client
 pandas
 numpy
 uv
+torch
 sentence_transformers
 fastapi-mcp
 google-auth
+dotenv

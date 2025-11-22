@@ -2,6 +2,9 @@
   "/chat/page": "app/chat/page.js",
   "/community/page": "app/community/page.js",
   "/dictionary/page": "app/dictionary/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
   "/page": "app/page.js",
+  "/study/learn/page": "app/study/learn/page.js",
+  "/study/learn/syllabus/[id]/page": "app/study/learn/syllabus/[id]/page.js",
   "/study/map/page": "app/study/map/page.js"
 }

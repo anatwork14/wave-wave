@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SearchBar from "@/components/SearchBar";
 import DictionaryCard from "@/components/DictionaryCard";
 import SameTopicSection from "./components/SameTopicSection";
@@ -16,87 +16,129 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import VocabularyInfo from "@/components/VocabularyInfo";
 
-const synonyms: Vocabulary[] = [
-  { title: "Map", link: "/dictionary" },
-  { title: "Occasion", link: "/dictionary" },
-  { title: "Office", link: "/dictionary" },
-  { title: "Part", link: "/dictionary" },
-  { title: "Procedure", link: "/dictionary" },
-  { title: "Purpose", link: "/dictionary" },
-  { title: "Role", link: "/dictionary" },
-  { title: "Routine", link: "/dictionary" },
-  { title: "Use", link: "/dictionary" },
-  { title: "Part", link: "/dictionary" },
-  { title: "Procedure", link: "/dictionary" },
-  { title: "Purpose", link: "/dictionary" },
-  { title: "Role", link: "/dictionary" },
-  { title: "Routine", link: "/dictionary" },
-  { title: "Use", link: "/dictionary" },
-];
+// --- 1. CẬP NHẬT TYPES ĐỂ KHỚP VỚI API BACKEND ---
+// API Response type: FullVocabularyItem
+export type FullVocabularyItem = {
+  id: number;
+  original_id: string | null;
+  topic_id: number | null;
+  word: string; // Tương ứng với 'title' cũ
+  instruction: string; // Tương ứng với 'description' cũ
+  video: string | null; // Tương ứng với 'videoUrl' cũ
 
-const currentVocabulary = {
-  title: "Trái dừa",
-  partOfSpeech: "Danh từ",
-  description: "Mô tả hành động trái dừa",
-  videoUrl: "https://qipedc.moet.gov.vn/videos/W02732N.mp4?autoplay=true",
-};
-
-export type Vocabulary = {
-  title: string;
+  // Trường phụ trợ cho UI, không có trong API
   partOfSpeech?: string;
-  description?: string;
-  videoUrl?: string;
-  imageUrl?: string;
-  link?: string;
 };
+
+// API Search Response (được trả về từ /api/vocabulary/search)
+type SearchWordTopicResponse = {
+  search_result: FullVocabularyItem;
+  related_words: FullVocabularyItem[];
+};
+
+// --- 2. LOẠI BỎ MOCK DATA ---
+// const synonyms: Vocabulary[] = [...] đã bị loại bỏ
+// const currentVocabulary = {...} đã bị loại bỏ
 
 export default function DictionaryPage() {
   const [showNoResult, setShowNoResult] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [definition, setDefinition] = useState<Vocabulary | null>(null);
-  const [sameTopicVocab, setSameTopicVocab] = useState<Vocabulary[]>([]); // ✅ fixed type
+  const [definition, setDefinition] = useState<FullVocabularyItem | null>(null);
+  const [sameTopicVocab, setSameTopicVocab] = useState<FullVocabularyItem[]>(
+    []
+  );
+  const [allVocab, setAllVocab] = useState<FullVocabularyItem[]>([]);
+  const [loadingAll, setLoadingAll] = useState(false);
+  const [allError, setAllError] = useState<string | null>(null);
 
+  // Fetch all vocabulary on mount so we can display the list and allow clicking
+  useEffect(() => {
+    const fetchAllWords = async () => {
+      setLoadingAll(true);
+      setAllError(null);
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/vocabulary/all`
+        );
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+
+        // Support several possible payload shapes
+        let items: FullVocabularyItem[] = [];
+        if (Array.isArray(data.vocabulary))
+          items = data.vocabulary; // ✅ Thêm dòng này
+        else if (Array.isArray(data)) items = data;
+        else if (Array.isArray(data.words)) items = data.words;
+        else if (Array.isArray(data.items)) items = data.items;
+
+        setAllVocab(items);
+      } catch (err: any) {
+        console.error("Failed to fetch all vocabulary:", err);
+        setAllError(err?.message || "Failed to fetch all words");
+      } finally {
+        setLoadingAll(false);
+      }
+    };
+
+    fetchAllWords();
+  }, []);
+
+  // --- HÀM ĐÃ SỬA LỖI ---
   const handleSearch = async (query: string) => {
-    setSearchQuery(query);
+    // 1. Luôn cập nhật searchQuery trước khi gọi API
+    setSearchQuery(query); // 2. Reset trạng thái kết quả
+
+    setDefinition(null);
+    setSameTopicVocab([]);
+    setShowNoResult(false);
+    if (!query.trim()) return; // Không tìm kiếm nếu query rỗng
 
     try {
-      // Example: call your dictionary API
-      // const res = await fetch(
-      //   `/api/dictionary?word=${encodeURIComponent(query)}`
-      // );
-      // const data = await res.json();
+      // GỌI API TÌM KIẾM
+      const res = await fetch(
+        `${
+          process.env.NEXT_PUBLIC_SERVER_URL
+        }/api/vocabulary/search?word_query=${encodeURIComponent(query.trim())}`
+      ); // 3. Xử lý phản hồi 404 (Không tìm thấy)
 
-      // if (data && data.definition && data.definition) {
-      //   setDefinition(data.definition);
-      // } else {
-      //   // No results found
+      if (res.status === 404) {
+        setShowNoResult(true);
+        return;
+      } // 4. Xử lý lỗi HTTP khác
 
-      // }
-      const data = {
-        definition: currentVocabulary,
-        synonyms: synonyms,
-      };
-      // const data = null;
-      if (data && data.definition) {
-        setDefinition(data.definition);
-        setSameTopicVocab(data.synonyms || []);
-        setShowNoResult(false); // ✅ Hide the dialog if we found something
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data: SearchWordTopicResponse = await res.json(); // 5. Xử lý dữ liệu thành công
+      if (data && data.search_result) {
+        // Ánh xạ dữ liệu tìm kiếm
+        const result = {
+          ...data.search_result,
+          partOfSpeech: data.search_result.partOfSpeech || "Chưa xác định",
+        };
+        setDefinition(result); // Ánh xạ dữ liệu liên quan
+        const relatedWords = (data.related_words || []).map((item) => ({
+          ...item,
+          partOfSpeech: item.partOfSpeech || "Chưa xác định",
+        }));
+        setSameTopicVocab(relatedWords);
       } else {
-        setDefinition(null);
-        setSameTopicVocab([]);
-        setShowNoResult(true); // ✅ Only show the popup if no result
+        // Dữ liệu rỗng nhưng không phải 404
+        setShowNoResult(true);
       }
     } catch (error) {
-      console.error("Search failed:", error);
+      console.error("Search failed:", error); // Xử lý lỗi mạng/server
       setShowNoResult(true);
     }
   };
 
   const handleAskMiniWave = () => {
-    // You can navigate, open a chat window, or trigger a Mini Wave modal here
+    // Logic cho Mini Wave
     alert(`Mini Wave is analyzing your query: "${searchQuery}"`);
     setShowNoResult(false);
   };
+
   return (
     <div className="mt-28">
       <div className="w-full mx-auto h-full bg-white px-6">
@@ -137,13 +179,11 @@ export default function DictionaryPage() {
         <div className="max-w-5xl mb-7 mx-auto">
           {/* Header Content */}
           <div className="space-y-6 relative z-10 text-center mb-10">
-            {/* Emoji Icon with decorative elements */}
-
             {/* Title with decorative ornaments */}
             <div className="space-y-3">
               <div className="flex items-center justify-center gap-4">
                 <div className="w-8 h-px bg-gradient-to-r from-transparent to-[#f66868]" />
-                <h1 className="text-6xl  font-black text-[#f66868]">
+                <h1 className="text-6xl  font-black text-[#f66868]">
                   Từ điển Wave Wave
                 </h1>
                 <div className="w-8 h-px bg-gradient-to-l from-transparent to-[#f66868]" />
@@ -166,21 +206,50 @@ export default function DictionaryPage() {
             placeholder="Nhập để tìm từ vựng..."
             onSearch={handleSearch}
           />
+          {/* All words list: click to search */}
+          <div className="max-w-5xl mx-auto mt-4">
+            {loadingAll ? (
+              <p className="text-sm text-gray-500">Đang tải danh sách từ...</p>
+            ) : allError ? (
+              <p className="text-sm text-red-500">Lỗi: {allError}</p>
+            ) : allVocab && allVocab.length > 0 ? (
+              <div>
+                <h3 className="text-sm text-gray-600 mb-2">Tất cả từ vựng</h3>
+                <div className="flex flex-wrap gap-2">
+                  {allVocab
+                    .filter((w) => !(definition && definition.word === w.word))
+                    .map((w) => (
+                      <button
+                        key={w.id}
+                        onClick={() => handleSearch(w.word)}
+                        className={`px-3 py-1 rounded-lg border transition-all duration-150 text-sm bg-white text-gray-700 border-gray-200 hover:bg-gray-50`}
+                      >
+                        {w.word}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">
+                Không có từ nào để hiển thị.
+              </p>
+            )}
+          </div>
         </div>
 
         <div
           className={`max-w-7xl mx-auto mt-10 grid grid-cols-1 ${
-            definition && "xl:grid-cols-3"
-          }  gap-6`}
+            definition ? "xl:grid-cols-3" : ""
+          } gap-6`}
         >
           {/* LEFT */}
           <div className="lg:col-span-2 space-y-4">
             {definition ? (
               <VocabularyInfo
-                word={currentVocabulary.title}
-                partOfSpeech={currentVocabulary.partOfSpeech}
-                definition={currentVocabulary.description}
-                videoUrl={currentVocabulary.videoUrl}
+                word={definition.word}
+                partOfSpeech={definition.partOfSpeech}
+                definition={definition.instruction}
+                videoUrl={definition.video || undefined}
                 imageUrl="/logo.svg"
               />
             ) : (
@@ -210,14 +279,10 @@ export default function DictionaryPage() {
           {/* RIGHT */}
           {definition && (
             <div className="flex flex-col gap-y-3">
-              <DictionaryCard
-                title="Trái Dừa"
-                tag="Danh từ"
-                imageUrl="dictionary/coconut.svg"
-                dictionaryUrl="/dictionary"
-                isDictionaryPage={false}
+              <SameTopicSection
+                sameTopicWord={sameTopicVocab}
+                onClickWord={handleSearch}
               />
-              <SameTopicSection sameTopicWord={sameTopicVocab} />
             </div>
           )}
         </div>

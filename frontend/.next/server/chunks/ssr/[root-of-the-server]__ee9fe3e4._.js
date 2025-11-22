@@ -241,11 +241,7 @@ function Navigation() {
             href: "/study/map",
             actualLink: "/study/map"
         },
-        {
-            name: "Cộng đồng",
-            href: "/community",
-            actualLink: "/community"
-        },
+        // { name: "Cộng đồng", href: "/community", actualLink: "/community" },
         {
             name: "Từ điển",
             href: "/dictionary",
