@@ -69,9 +69,9 @@ export default function LearningSummary() {
               <Users className="w-8 h-8 text-[#F66868]" />
             </div>
             <p className="text-3xl font-extrabold text-[#F66868] animate-pop">
-              {stats.totalLearners.toLocaleString()}
+              {stats.totalLearners.toLocaleString()}+
             </p>
-            <p className="text-sm font-medium text-gray-600">Học viên</p>
+            <p className="text-sm font-medium text-gray-600">Từ vựng</p>
           </div>
         </div>
       </Card>

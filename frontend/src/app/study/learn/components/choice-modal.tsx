@@ -111,7 +111,7 @@ export default function ChoiceModal({
           </button>
 
           {/* Option 2: Setup Schedule */}
-          <button
+          {/* <button
             onClick={onSetupSchedule}
             onMouseEnter={() => setHoveredOption("schedule")}
             onMouseLeave={() => setHoveredOption(null)}
@@ -125,7 +125,6 @@ export default function ChoiceModal({
               }
             `}
           >
-            {/* Icon Section */}
             <div
               className={`
               w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0
@@ -145,8 +144,6 @@ export default function ChoiceModal({
                 }`}
               />
             </div>
-
-            {/* Content Section */}
             <div className="flex-1 min-w-0">
               <h3 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
                 Thiết lập lịch học
@@ -174,9 +171,8 @@ export default function ChoiceModal({
                 </span>
               </div>
             </div>
-          </button>
+          </button> */}
 
-          {/* Cancel Button */}
           <Button
             variant="outline"
             onClick={onClose}
@@ -186,7 +182,6 @@ export default function ChoiceModal({
           </Button>
         </div>
 
-        {/* Footer Info */}
         <div className="bg-gray-50 px-6 py-4 border-t">
           <p className="text-sm text-gray-600 text-center">
             💡 <strong>Gợi ý:</strong> Nếu bạn muốn học một chủ đề mới, hãy tạo

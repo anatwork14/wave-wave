@@ -2092,98 +2092,100 @@ async def get_all_vocabulary(app_request: Request):
         
 @app.get("/api/vocabulary/search", response_model=SearchWordTopicResponse)
 async def search_word_and_get_related(
-  app_request: Request,
-  word_query: str = Query(..., description="The word to search for (e.g., 'con bò')")
+    app_request: Request,
+    word_query: str = Query(..., description="The word to search for (e.g., 'con bò')")
 ):
-  """
-  Searches for a specific word, returns the word details, 
-  and all other words belonging to the same topic_id.
-  """
-  search_term = word_query.strip()
-  
-  try:
-    async with app_request.app.state.db_pool.acquire() as connection:
-      
-      # --- 1. Tìm từ gốc và Topic ID ---
-      # Cố gắng tìm kiếm chính xác (case-insensitive)
-        found_word_record = await connection.fetchrow(
-        """
-        SELECT id, original_id, topic_id, word, instruction, video 
-        FROM vocabulary
-        WHERE word ILIKE $1 
-        LIMIT 1;
-        """,
-        search_term 
-      )
+    """
+    Searches for a specific word, returns the word details, 
+    and all other words belonging to the same topic_id.
+    """
+    search_term = word_query.strip()
+    
+    try:
+        async with app_request.app.state.db_pool.acquire() as connection:
+            
+            # --- 1. Tìm từ gốc và Topic ID ---
+            found_word_record = await connection.fetchrow(
+            """
+            SELECT id, original_id, topic_id, word, instruction, video 
+            FROM vocabulary
+            WHERE word ILIKE $1 
+            LIMIT 1;
+            """,
+            search_term 
+            )
 
             # Nếu tìm kiếm chính xác thất bại, thử tìm kiếm gần đúng hơn
-        if not found_word_record:
-                 found_word_record = await connection.fetchrow(
-        """
-        SELECT id, original_id, topic_id, word, instruction, video 
-        FROM vocabulary
-        WHERE word ILIKE $1 
-        LIMIT 1;
-        """,
-        f'%{search_term}%' # Thêm % ở hai đầu để tìm kiếm lỏng hơn
-      )
+            if not found_word_record:
+                found_word_record = await connection.fetchrow(
+            """
+            SELECT id, original_id, topic_id, word, instruction, video 
+            FROM vocabulary
+            WHERE word ILIKE $1 
+            LIMIT 1;
+            """,
+            f'%{search_term}%'
+            )
 
 
-        if not found_word_record:
-            raise HTTPException(status_code=404, detail=f"Word '{search_term}' not found.")
-      
-      # Chuẩn bị kết quả tìm kiếm
-        search_result_item = FullVocabularyItem(
-        id=found_word_record['id'],
-        original_id=found_word_record['original_id'],
-        topic_id=found_word_record['topic_id'],
-        word=found_word_record['word'],
-        instruction=found_word_record['instruction'],
-        video=found_word_record['video']
-      )
+            if not found_word_record:
+                raise HTTPException(status_code=404, detail=f"Word '{search_term}' not found.")
+            
+            # Chuẩn bị kết quả tìm kiếm
+            search_result_item = FullVocabularyItem(
+                id=found_word_record['id'],
+                original_id=found_word_record['original_id'],
+                topic_id=found_word_record['topic_id'],
+                word=found_word_record['word'],
+                instruction=found_word_record['instruction'],
+                video=found_word_record['video']
+            )
 
-        related_words = []
-        topic_id = found_word_record['topic_id']
-      
-      # --- 2. Lấy các từ liên quan (cùng Topic ID) ---
-        if topic_id is not None:
-            related_query = """
-          SELECT id, original_id, topic_id, word, instruction, video 
-          FROM vocabulary
-          WHERE topic_id = $1 AND id != $2
-          ORDER BY word;
-        """
-            related_records = await connection.fetch(
-          related_query, 
-          topic_id, 
-          found_word_record['id']
+            topic_id = found_word_record['topic_id']
+            # ⭐ FIX: Khởi tạo related_records với giá trị mặc định
+            related_records = [] 
+            
+            # --- 2. Lấy các từ liên quan (cùng Topic ID) ---
+            if topic_id is not None:
+                related_query = """
+                SELECT id, original_id, topic_id, word, instruction, video 
+                FROM vocabulary
+                WHERE topic_id = $1 AND id != $2
+                ORDER BY word;
+                """
+                # Gán kết quả vào biến đã được khởi tạo
+                related_records = await connection.fetch(
+                    related_query, 
+                    topic_id, 
+                    found_word_record['id']
+                )
+            
+            # Bây giờ, related_records luôn là list (dù là list rỗng hay list kết quả)
+            related_words = [
+                FullVocabularyItem(
+                    id=r['id'],
+                    original_id=r['original_id'],
+                    topic_id=r['topic_id'],
+                    word=r['word'],
+                    instruction=r['instruction'],
+                    video=r['video']
+                ) for r in related_records
+            ]
+
+            # --- 3. Trả về kết quả cuối cùng ---
+            return SearchWordTopicResponse(
+                search_result=search_result_item,
+                related_words=related_words
+            )
+
+    except HTTPException:
+        raise # Re-raise 404
+    except Exception as e:
+        print(f"Error searching vocabulary for '{search_term}': {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"An internal error occurred during search. Error: {e}"
         )
-        
-        related_words = [
-          FullVocabularyItem(
-            id=r['id'],
-            original_id=r['original_id'],
-            topic_id=r['topic_id'],
-            word=r['word'],
-            instruction=r['instruction'],
-            video=r['video']
-          ) for r in related_records
-        ]
-
-      # --- 3. Trả về kết quả cuối cùng ---
-        return SearchWordTopicResponse(
-        search_result=search_result_item,
-        related_words=related_words
-      )
-
-  except HTTPException:
-    raise # Re-raise 404
-  except Exception as e:
-    print(f"Error searching vocabulary for '{search_term}': {e}")
-    raise HTTPException(
-      status_code=500,
-      detail=f"An internal error occurred during search. Error: {e}"
-    )
 # -------------------------------------------------------------
 # 5. Run the server locally 🚀
 # -------------------------------------------------------------

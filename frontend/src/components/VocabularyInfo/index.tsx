@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Bookmark,
   Check,
-  Share,
   Video,
   Image as ImageIcon,
   Sparkles,
@@ -301,47 +300,6 @@ export default function VocabularyInfo({
               </div>
             )}
           </div>
-          <TooltipProvider>
-            <div className="flex gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => {
-                      setIsShare(true);
-                      navigator.clipboard.writeText(window.location.href);
-                    }}
-                    className="p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all backdrop-blur-sm"
-                  >
-                    {isShare ? (
-                      <Check className="text-white" />
-                    ) : (
-                      <Share className="text-white" />
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {isShare ? "Đã sao chép!" : "Chia sẻ"}
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => setBookmarked(!bookmarked)}
-                    className="p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all backdrop-blur-sm"
-                  >
-                    <Bookmark
-                      className={`w-6 h-6 ${
-                        bookmarked ? "fill-white text-white" : "text-white"
-                      }`}
-                    />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {bookmarked ? "Đã lưu" : "Lưu từ"}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </TooltipProvider>
         </div>
       </div>
 

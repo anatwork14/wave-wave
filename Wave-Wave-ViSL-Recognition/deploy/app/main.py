@@ -178,8 +178,148 @@ async def stream_predict(websocket: WebSocket):
             await websocket.close()
         except:
             pass
-        
+
+# --------------------------------
+# WebSocket Continuous Prediction
+# --------------------------------
+@app.websocket("/ws/stream-predict2/")
+async def stream_predict(websocket: WebSocket, expected_word: str | None = None):
+    # 1. Accept Connection
+    await websocket.accept()
+    
+    print(f"INFO: Client connected. Target Word: {expected_word}")
+    
+    # Buffer to hold frames (Max 60 to give us some wiggle room, but we slice 30)
+    keypoints_buffer = deque(maxlen=60)
+    
+    hand_detected = False
+    
+    # Config for Sliding Window
+    PREDICTION_INTERVAL = 10  # Predict every 10 new frames (Continuous feel)
+    FRAMES_REQUIRED = 30      # Model needs exactly 30 frames
+    frames_since_last_pred = 0
+
+    try:
+        while True:
+            # -----------------------------
+            # 1. Receive & Decode Frame
+            # -----------------------------
+            try:
+                data = await websocket.receive_text()
+                
+                # Clean header if present (Fixes "Invalid frame" error)
+                if "," in data:
+                    base64_frame = data.split(",", 1)[1]
+                else:
+                    base64_frame = data
+                
+                nparr = np.frombuffer(base64.b64decode(base64_frame), np.uint8)
+                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+                if frame is None:
+                    continue
+
+            except Exception as e:
+                print(f"Stream closed or error: {e}")
+                break
+            
+            # -----------------------------
+            # 2. MediaPipe Processing
+            # -----------------------------
+            image, results = mediapipe_detection(frame, holistic)
+            keypoints = extract_keypoints(results)
+            
+            # Filter: Require keypoints
+            if keypoints is None or len(keypoints) == 0:
+                await websocket.send_json({"status": "waiting", "message": "No body detected."})
+                continue
+
+            # Filter: Require Hands (Optional, keeps buffer clean)
+            if not hand_detected:
+                # Check if hand landmarks are not all zero
+                if np.all(keypoints[:N_HAND_LANDMARKS*2] == 0.0):
+                    await websocket.send_json({"status": "waiting", "message": "Please raise hands."})
+                    continue
+                hand_detected = True
+                await websocket.send_json({"status": "position_ok", "message": "Hands detected!"})
+            
+            # -----------------------------
+            # 3. Buffer Management
+            # -----------------------------
+            keypoints_buffer.append(keypoints)
+            frames_since_last_pred += 1
+            
+            # -----------------------------
+            # 4. Prediction Logic (Sliding Window)
+            # -----------------------------
+            # We predict if we have enough frames (30) AND we hit the interval (every 10 frames)
+            if len(keypoints_buffer) >= FRAMES_REQUIRED and frames_since_last_pred >= PREDICTION_INTERVAL:
+                
+                # Reset counter
+                frames_since_last_pred = 0
+                
+                # --- CRITICAL: Get exactly the LAST 30 frames ---
+                temp_list = list(keypoints_buffer)
+                recent_frames = temp_list[-FRAMES_REQUIRED:] # Take last 30
+                
+                # Preprocess
+                seq_array = np.array(recent_frames)
+                processed_seq = interpolate_keypoints_sequence(seq_array)
+                X_input = np.expand_dims(processed_seq, axis=0).astype(np.float32)
+                
+                # AI Prediction
+                preds = model.predict(X_input, verbose=0)
+                label_int = int(np.argmax(preds))
+                confidence = float(np.max(preds))
+                label_text = label2text.get(label_int, "Unknown")
+                
+                # Validation Logic
+                is_correct = False
+                if expected_word:
+                    # Normalize both to lowercase and stripped for comparison
+                    # Handle potential differences like "Hello " vs "hello"
+                    clean_pred = label_text.lower().strip()
+                    clean_target = expected_word.lower().strip()
+                    
+                    # Exact match or substring match (optional)
+                    is_correct = clean_pred == clean_target
+                
+                # Send Result
+                await websocket.send_json({
+                    "status": "predicted",
+                    "label_text": label_text,
+                    "confidence": confidence,
+                    "expected_word": expected_word,
+                    "is_correct": is_correct
+                })
+                
+                # If correct, we might want to clear buffer to let user restart
+                # Or keep it running. Clearing gives a better "Success" feeling.
+                if is_correct:
+                    keypoints_buffer.clear()
+                    hand_detected = False # Require them to "re-enter" frame for next attempt
+                    await websocket.send_json({"status": "success", "message": "Correct!"})
+
+            # Send progress update only if NOT predicting this frame
+            elif len(keypoints_buffer) < FRAMES_REQUIRED:
+                 if len(keypoints_buffer) % 5 == 0:
+                    await websocket.send_json({
+                        "status": "collecting",
+                        "frames_collected": len(keypoints_buffer),
+                        "frames_needed": FRAMES_REQUIRED
+                    })
+
+    except WebSocketDisconnect:
+        print("INFO: Client disconnected.")
+    except Exception as e:
+        print(f"CRITICAL ERROR: {e}")
+        traceback.print_exc()
+    finally:
+        try: await websocket.close()
+        except: pass
+
+
         
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8001)
     

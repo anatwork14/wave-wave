@@ -17,28 +17,23 @@ import Image from "next/image";
 import VocabularyInfo from "@/components/VocabularyInfo";
 
 // --- 1. CẬP NHẬT TYPES ĐỂ KHỚP VỚI API BACKEND ---
-// API Response type: FullVocabularyItem
 export type FullVocabularyItem = {
   id: number;
   original_id: string | null;
   topic_id: number | null;
-  word: string; // Tương ứng với 'title' cũ
-  instruction: string; // Tương ứng với 'description' cũ
-  video: string | null; // Tương ứng với 'videoUrl' cũ
-
-  // Trường phụ trợ cho UI, không có trong API
+  word: string;
+  instruction: string;
+  video: string | null;
   partOfSpeech?: string;
 };
 
-// API Search Response (được trả về từ /api/vocabulary/search)
 type SearchWordTopicResponse = {
   search_result: FullVocabularyItem;
   related_words: FullVocabularyItem[];
 };
 
-// --- 2. LOẠI BỎ MOCK DATA ---
-// const synonyms: Vocabulary[] = [...] đã bị loại bỏ
-// const currentVocabulary = {...} đã bị loại bỏ
+// Khai báo hằng số cho số lượng từ vựng hiển thị trên mỗi trang
+const VOCABULARY_PER_PAGE = 100;
 
 export default function DictionaryPage() {
   const [showNoResult, setShowNoResult] = useState(false);
@@ -50,6 +45,9 @@ export default function DictionaryPage() {
   const [allVocab, setAllVocab] = useState<FullVocabularyItem[]>([]);
   const [loadingAll, setLoadingAll] = useState(false);
   const [allError, setAllError] = useState<string | null>(null);
+
+  // ⭐ NEW: State cho trang hiện tại
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch all vocabulary on mount so we can display the list and allow clicking
   useEffect(() => {
@@ -63,10 +61,8 @@ export default function DictionaryPage() {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
 
-        // Support several possible payload shapes
         let items: FullVocabularyItem[] = [];
-        if (Array.isArray(data.vocabulary))
-          items = data.vocabulary; // ✅ Thêm dòng này
+        if (Array.isArray(data.vocabulary)) items = data.vocabulary;
         else if (Array.isArray(data)) items = data;
         else if (Array.isArray(data.words)) items = data.words;
         else if (Array.isArray(data.items)) items = data.items;
@@ -85,58 +81,70 @@ export default function DictionaryPage() {
 
   // --- HÀM ĐÃ SỬA LỖI ---
   const handleSearch = async (query: string) => {
-    // 1. Luôn cập nhật searchQuery trước khi gọi API
-    setSearchQuery(query); // 2. Reset trạng thái kết quả
-
+    setSearchQuery(query);
     setDefinition(null);
     setSameTopicVocab([]);
     setShowNoResult(false);
-    if (!query.trim()) return; // Không tìm kiếm nếu query rỗng
+    if (!query.trim()) return;
 
     try {
-      // GỌI API TÌM KIẾM
       const res = await fetch(
         `${
           process.env.NEXT_PUBLIC_SERVER_URL
         }/api/vocabulary/search?word_query=${encodeURIComponent(query.trim())}`
-      ); // 3. Xử lý phản hồi 404 (Không tìm thấy)
+      );
 
       if (res.status === 404) {
         setShowNoResult(true);
         return;
-      } // 4. Xử lý lỗi HTTP khác
+      }
 
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
 
-      const data: SearchWordTopicResponse = await res.json(); // 5. Xử lý dữ liệu thành công
+      const data: SearchWordTopicResponse = await res.json();
       if (data && data.search_result) {
-        // Ánh xạ dữ liệu tìm kiếm
         const result = {
           ...data.search_result,
           partOfSpeech: data.search_result.partOfSpeech || "Chưa xác định",
         };
-        setDefinition(result); // Ánh xạ dữ liệu liên quan
+        setDefinition(result);
         const relatedWords = (data.related_words || []).map((item) => ({
           ...item,
           partOfSpeech: item.partOfSpeech || "Chưa xác định",
         }));
         setSameTopicVocab(relatedWords);
       } else {
-        // Dữ liệu rỗng nhưng không phải 404
         setShowNoResult(true);
       }
     } catch (error) {
-      console.error("Search failed:", error); // Xử lý lỗi mạng/server
+      console.error("Search failed:", error);
       setShowNoResult(true);
     }
   };
 
   const handleAskMiniWave = () => {
-    // Logic cho Mini Wave
     alert(`Mini Wave is analyzing your query: "${searchQuery}"`);
     setShowNoResult(false);
+  };
+
+  // ⭐ NEW: Logic phân trang
+  const totalPages = Math.ceil(allVocab.length / VOCABULARY_PER_PAGE);
+  const startIndex = (currentPage - 1) * VOCABULARY_PER_PAGE;
+  const endIndex = startIndex + VOCABULARY_PER_PAGE;
+  const vocabToDisplay = allVocab.slice(startIndex, endIndex);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   return (
@@ -207,16 +215,19 @@ export default function DictionaryPage() {
             onSearch={handleSearch}
           />
           {/* All words list: click to search */}
-          <div className="max-w-5xl mx-auto mt-4">
+          <div className="max-w-5xl mx-auto mt-4" id="vocab-list-container">
             {loadingAll ? (
               <p className="text-sm text-gray-500">Đang tải danh sách từ...</p>
             ) : allError ? (
               <p className="text-sm text-red-500">Lỗi: {allError}</p>
             ) : allVocab && allVocab.length > 0 ? (
               <div>
-                <h3 className="text-sm text-gray-600 mb-2">Tất cả từ vựng</h3>
+                <h3 className="text-sm text-gray-600 mb-2">
+                  Tất cả từ vựng ({allVocab.length} từ | Trang {currentPage}/
+                  {totalPages})
+                </h3>
                 <div className="flex flex-wrap gap-2">
-                  {allVocab
+                  {vocabToDisplay
                     .filter((w) => !(definition && definition.word === w.word))
                     .map((w) => (
                       <button
@@ -227,6 +238,32 @@ export default function DictionaryPage() {
                         {w.word}
                       </button>
                     ))}
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-100">
+                  <Button
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                    variant="outline"
+                    className="text-sm"
+                  >
+                    Trang trước
+                  </Button>
+
+                  <p className="text-sm text-gray-500">
+                    Đang hiển thị {startIndex + 1} -{" "}
+                    {Math.min(endIndex, allVocab.length)}
+                  </p>
+
+                  <Button
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                    variant="outline"
+                    className="text-sm"
+                  >
+                    Trang sau
+                  </Button>
                 </div>
               </div>
             ) : (

@@ -1,18 +1,44 @@
+version: "3.8"
+
 services:
+  # 1. The PostgreSQL Database Service
   db:
-    image: postgres:15
+    image: postgres:15-alpine
     restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "123456"
-      POSTGRES_DB: sudocode
-    ports:
-      - "5432:5432"
+    # Loads all credentials (POSTGRES_USER, POSTGRES_PASSWORD, etc.) from the .env file
+    env_file:
+      - .env
     volumes:
-      # 1. Persist data locally for the user
+      # Persist data so it doesn't vanish when container stops
       - postgres_data:/var/lib/postgresql/data
-      # 2. LOAD YOUR SNAPSHOT (Only runs if database is empty)
+      # MAP THE INIT FILE HERE: The database will run this file on first startup
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      # Maps localhost:5432 to container:5432 (for external tools like pgAdmin)
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Your Backend / MCP Server
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp_backend
+    # Make sure this command is correct for starting your application
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
 
 volumes:
   postgres_data:
