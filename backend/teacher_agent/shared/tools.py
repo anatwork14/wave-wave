@@ -1,4 +1,4 @@
-from qdrant_client import QdrantClient, models # Import models is important here
+from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
 import os
 from dotenv import load_dotenv
@@ -37,6 +37,3 @@ def get_words(query: str, limit: int):
     except Exception as e:
         print(f"An error occurred during context retrieval: {e}")
         return []
-
-# Test it
-print(get_words("động vật", 20))

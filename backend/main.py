@@ -185,7 +185,7 @@ class SyllabusInfo(BaseModel):
     id: int
     title: str
     description: str | None
-    progress: int
+    progress: float
     status: str
     lesson_count: int
 
@@ -1705,7 +1705,7 @@ async def submit_quiz_score(
                         submitted_at = NOW(),
                         status = 'completed'
                     WHERE
-                        id = $2 AND user_id = $3
+                        quiz_id = $2 AND user_id = $3
                     RETURNING id, status, score;
                 """
                 
@@ -1719,7 +1719,7 @@ async def submit_quiz_score(
                 if not updated_record:
                     raise HTTPException(
                         status_code=404,
-                        detail=f"Không tìm thấy lượt làm quiz (ID: {submission_data.quiz_attempt_id}) hoặc user ID không khớp."
+                        detail=f"Không tìm thấy lượt làm quiz (ID: {submission_data.quiz_id}) hoặc user ID không khớp."
                     )
 
                 # 2️⃣ Cập nhật bảng user_lesson → completed

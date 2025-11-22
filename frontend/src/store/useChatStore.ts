@@ -23,6 +23,7 @@ interface ChatState {
   // --- New State for Typing/Streaming ---
   assistantTyping: boolean;
   assistantMessageContent: string;
+  newestChat: boolean;
   // -------------------------------------
   setChatSessions: (sessions: ChatSession[]) => void;
   setCurrentChat: (chat: ChatSession | null) => void;
@@ -31,6 +32,7 @@ interface ChatState {
   // --- New Actions for Typing/Streaming ---
   setAssistantTyping: (isTyping: boolean) => void;
   setAssistantMessageContent: (content: string) => void;
+  setNewestChat: (isNewestChat: boolean) => void;
   // ----------------------------------------
 }
 
@@ -40,6 +42,7 @@ export const useChatStore = create<ChatState>((set) => ({
   // --- Initializing New State ---
   assistantTyping: false,
   assistantMessageContent: "",
+  newestChat: false,
   // ------------------------------
   setChatSessions: (sessions) => set({ chatSessions: sessions }),
   setCurrentChat: (chat) => set({ currentChat: chat }),
@@ -84,5 +87,6 @@ export const useChatStore = create<ChatState>((set) => ({
             }
           : state.currentChat,
     })),
+  setNewestChat: (isNewestChat) => set({ newestChat: isNewestChat }),
   // ----------------------------------
 }));

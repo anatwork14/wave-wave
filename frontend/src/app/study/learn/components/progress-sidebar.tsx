@@ -18,6 +18,7 @@ import CurriculumModal from "@/components/curriculum-modal";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/useUserStore";
 import ScheduleModal from "./schedule-modal";
+import { usePromptStore } from "@/store/useUserPrompt";
 
 type LessonStatus = "complete" | "in-progress" | "not_start";
 
@@ -59,6 +60,7 @@ export default function ProgressSidebar({
   const router = useRouter();
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
+  const { setPrompt } = usePromptStore();
   // 🆕 State to store existing user preferences
   const [userPreferences, setUserPreferences] = useState<UserPreference | null>(
     null
@@ -118,30 +120,9 @@ export default function ProgressSidebar({
 - Số bài học: ${totalLessons}
 - Số từ vựng: ${totalVocabulary}
 Vui lòng đề xuất một thời gian biểu học tập thật hợp lí. Hãy tạo và không hỏi gì thêm`;
-      const saveRes = await fetch(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/preferences`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user_id: user?.id,
-            // We only update time/schedule here, but the backend upsert handles partial updates if implemented,
-            // otherwise you might need to pass existing values for other fields if your backend overwrites nulls.
-            available_time: formData.freetime,
-            schedule: formData.schedule,
-            query: aiQuery,
-          }),
-        }
-      );
 
-      if (!saveRes.ok) throw new Error("Failed to save schedule");
-
-      // 🆕 Update local state immediately so UI reflects changes without refresh
-      setUserPreferences((prev) => ({
-        ...prev,
-        available_time: formData.freetime,
-        schedule: formData.schedule,
-      }));
+      setPrompt(aiQuery);
+      router.push("/chat");
 
       alert("✅ Lịch học đã được cập nhật thành công!");
       setIsScheduleModalOpen(false);
@@ -193,7 +174,7 @@ Vui lòng đề xuất một thời gian biểu học tập thật hợp lí. H�
 - Kỳ vọng khi hoàn thành khoá học: ${formData.hope}
 - Trình độ kỹ năng hiện tại: ${formData.skill}
 
-Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng. Hãy tạo và không hỏi gì thêm`;
+Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng.`;
 
       // 3️⃣ Step 3: Send to AI backend
       const aiRes = await fetch(
@@ -216,7 +197,9 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng. 
 
       // 4️⃣ Step 4: Extract SyllabusID from response
       const responseText = aiResult.response || "";
-      const syllabusMatch = responseText.match(/\[SyllabusID:(\d+)\]/i);
+      const syllabusMatch =
+        responseText.match(/\[SyllabusID:(\d+)\]/i) ||
+        responseText.match(/\[SyllabusID: (\d+)\]/i);
 
       if (syllabusMatch && syllabusMatch[1]) {
         const syllabusId = syllabusMatch[1];
@@ -224,11 +207,11 @@ Vui lòng đề xuất một lộ trình học tập có cấu trúc rõ ràng. 
         alert("🎓 Giáo trình cá nhân hoá đã được tạo thành công!");
         router.push(`/study/learn/syllabus/${syllabusId}`);
       } else {
-        alert("❌ Có lỗi xảy ra khi tạo giáo trình. Vui lòng thử lại.");
+        router.push("/chat");
       }
     } catch (err) {
       console.error("Error submitting curriculum form:", err);
-      alert("❌ Có lỗi xảy ra. Vui lòng thử lại.");
+      router.push("/chat");
     } finally {
       setIsSubmitting(false);
     }

@@ -72,10 +72,22 @@ export default function Page() {
     chatSessions, // 👈 Need access to current list to prepend new chat
     setAssistantTyping,
     setCurrentChatMessages,
+    newestChat,
+    setNewestChat,
   } = useChatStore();
 
   const { user } = useUserStore();
-
+  useEffect(() => {
+    // If newestChat is true AND we have at least one session AND the current chat is not already the first one
+    if (
+      newestChat &&
+      chatSessions.length > 0 &&
+      currentChat?.id !== chatSessions[0].id
+    ) {
+      const firstChat = chatSessions[0]; // 1. Set the first chat as the current chat
+      setCurrentChat(firstChat); // 2. Update the URL to match the new chat's ID/title
+    } // DEPENDENCIES: Only re-run if newestChat flag changes, or the list of sessions changes // If the chatSessions list is updated (e.g., a new chat is prepended), this will run.
+  }, [newestChat, chatSessions, setCurrentChat, currentChat?.id]);
   // -----------------------------------------------
   // ⭐ OPTIMIZED handleSend FUNCTION ⭐
   // -----------------------------------------------

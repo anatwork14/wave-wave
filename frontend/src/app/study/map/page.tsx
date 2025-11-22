@@ -21,11 +21,12 @@ import LearningSummary from "@/components/LearningSummary";
 import MedicalTerminologyCard from "@/components/MedicalTerminologyCard";
 import CurriculumModal from "@/components/curriculum-modal";
 import { useRouter } from "next/navigation";
+import { useChatStore } from "@/store/useChatStore";
 
-type LessonStatus = "completed" | "in-progress" | "upcoming" | "locked";
+type LessonStatus = "completed" | "in_progress" | "upcoming" | "locked";
 
 export interface MappedSyllabus {
-  id: string;
+  id: number;
   title: string;
   description: string;
   status: LessonStatus;
@@ -71,7 +72,7 @@ export default function MapPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
-
+  const { setNewestChat } = useChatStore();
   useEffect(() => {
     const fetchSyllabuses = async () => {
       let isCurriculumSet = false;
@@ -94,6 +95,7 @@ export default function MapPage() {
           }
         } else {
           const data: { syllabuses: SyllabusInfo[] } = await response.json();
+          console.log(data);
           if (data.syllabuses && data.syllabuses.length > 0) {
             const sortedSyllabuses = data.syllabuses.sort(
               (a, b) => a.id - b.id
@@ -101,7 +103,7 @@ export default function MapPage() {
 
             const mapped_syllabus: MappedSyllabus[] = sortedSyllabuses.map(
               (syllabus, index) => ({
-                id: syllabus.id.toString(),
+                id: syllabus.id,
                 title: syllabus.title,
                 description: syllabus.description,
                 progress: syllabus.progress,
@@ -225,7 +227,9 @@ export default function MapPage() {
           "⚠️ Không tìm thấy SyllabusID trong phản hồi AI:",
           responseText
         );
-        alert("❌ Có lỗi xảy ra khi tạo giáo trình. Vui lòng thử lại.");
+        setNewestChat(true);
+        router.push("/chat");
+        // alert("❌ Có lỗi xảy ra khi tạo giáo trình. Vui lòng thử lại.");
       }
     } catch (err) {
       console.error("Error submitting curriculum form:", err);
@@ -299,7 +303,7 @@ export default function MapPage() {
                         className="w-4 h-4 text-white"
                       />
                     )}
-                    {syllabus.status === "in-progress" && (
+                    {syllabus.status === "in_progress" && (
                       <Play key="in-progress" className="w-4 h-4 text-white" />
                     )}
                     {syllabus.status === "upcoming" && (

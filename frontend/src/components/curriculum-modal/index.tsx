@@ -244,7 +244,7 @@ export default function CurriculumModal({
               <Input
                 id="target"
                 name="target"
-                placeholder="Ví dụ: Giao tiếp cơ bản, thi chứng chỉ, học từ vựng y tế..."
+                placeholder="Ví dụ: Giao tiếp cơ bản, học từ vựng y tế..."
                 value={formData.target}
                 onChange={handleInputChange}
                 required
@@ -272,26 +272,6 @@ export default function CurriculumModal({
               />
             </fieldset>
 
-            {/* Schedule Field */}
-            <fieldset className="space-y-3" disabled={isLoading}>
-              <Label
-                htmlFor="schedule"
-                className="text-base font-semibold text-gray-800 flex items-center gap-2"
-              >
-                <span className="text-xl">📅</span>
-                Lịch trình học tập mong muốn
-              </Label>
-              <Input
-                id="schedule"
-                name="schedule"
-                placeholder="Ví dụ: Tối thứ 2-4-6 lúc 8h, Sáng chủ nhật..."
-                value={formData.schedule}
-                onChange={handleInputChange}
-                required
-                className="text-base h-12 border-2 focus:border-[#F66868] focus:ring-2 focus:ring-[#F66868]/20 transition-all disabled:opacity-50"
-              />
-            </fieldset>
-
             {/* Expectations Field */}
             <fieldset className="space-y-3" disabled={isLoading}>
               <Label
@@ -313,7 +293,7 @@ export default function CurriculumModal({
             </fieldset>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4 sticky bottom-0 bg-white pb-2 border-t border-gray-100 mt-4">
+            <div className="flex gap-3 pt-4 sticky bottom-0 z-50 bg-white mb-2 border-t border-gray-100 mt-4">
               <Button
                 type="button"
                 variant="outline"

@@ -35,7 +35,6 @@ export default function StudyPage({
   );
   const [isLoadingSyllabus, setIsLoadingSyllabus] = useState(true);
 
-  console.log("Selected Syllabus ID:", selectedSyllabusId);
   // This effect sets the user
   useEffect(() => {
     setSelectedSyllabusId(urlSyllabusId);

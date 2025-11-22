@@ -215,36 +215,43 @@ export default function LessonPlayer({ lesson }: { lesson: Lesson }) {
       }
 
       const data = await response.json();
-      const agentResponse = JSON.parse(data.response);
+      const rawAgentResponseText = data.response; // 👈 Lấy raw text từ Agent
 
-      if (agentResponse.action === "create_quiz") {
-        console.log("Quiz đã được tạo:", agentResponse.payload);
+      let agentResponse;
+      let agentMessage = rawAgentResponseText; // Mặc định là raw text
+      let isSuccessfulToolCall = false; // 1. THỬ PHÂN TÍCH JSON (Áp dụng cho phản hồi tool call)
+
+      try {
+        agentResponse = JSON.parse(rawAgentResponseText); // Nếu là JSON, trích xuất payload và kiểm tra action
+        agentMessage = agentResponse.payload || rawAgentResponseText;
+        if (agentResponse.action === "create_quiz") {
+          isSuccessfulToolCall = true;
+        }
+      } catch (e) {
+        // Bỏ qua lỗi parse: Nếu không phải JSON, nó là plain text.
+        console.log(
+          "Agent response was plain text (expected for custom messages)."
+        );
+      } // 2. KIỂM TRA ĐIỀU KIỆN THÀNH CÔNG (tool call hoặc plain text message)
+
+      if (
+        isSuccessfulToolCall ||
+        String(agentMessage).includes("[QuizID:") ||
+        String(agentMessage).includes("Tuyệt vời")
+      ) {
+        console.log("Quiz generation successful/already exists:", agentMessage); // Chạy logic thành công
         await fetchData();
         setPhase("quiz");
       } else {
-        // --- 💡 START FIX ---
-        // Get the payload message from the agent
-        const payloadMessage =
-          agentResponse.payload || "Agent không thể tạo quiz";
-
-        // Check if the payload message contains your special success string
-        if (String(payloadMessage).includes("[QuizID:")) {
-          console.log(
-            "Quiz generation handled (e.g., already exists):",
-            payloadMessage
-          );
-
-          // This is not an error, so run the same success logic
-          await fetchData();
-          setPhase("quiz");
-        } else {
-          // This is a REAL agent error
-          throw new Error(payloadMessage);
-        }
-        // --- 💡 END FIX ---
+        // Đây là lỗi thực sự (ví dụ: plain text nhưng không phải success message)
+        console.error(
+          "Agent returned an unhandled error message:",
+          rawAgentResponseText
+        );
+        throw new Error(agentMessage);
       }
     } catch (err: any) {
-      // This will now only catch true errors
+      // Chỉ bắt lỗi nếu throw New Error ở trên hoặc lỗi API
       setError(err.message);
     } finally {
       setIsGenerating(false);

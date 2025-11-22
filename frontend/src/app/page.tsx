@@ -85,7 +85,7 @@ export default function Home() {
         />
         <div className="hidden xl:flex flex-col gap-y-10">
           {[
-            { id: "01", color: "#FF6060", text: "Hơn 100 từ vựng" },
+            { id: "01", color: "#FF6060", text: "Hơn 4000 từ vựng" },
             { id: "02", color: "#2B4BB3", text: "Học cùng với AI" },
             { id: "03", color: "#32AAA0", text: "Lộ trình học riêng" },
           ].map((item) => (
@@ -151,7 +151,7 @@ export default function Home() {
             {
               icon: <BookOpen size={48} />,
               title: "Học tập",
-              desc: "Khám phá thế giới ngôn ngữ ký hiệu qua video minh hoạ, trò chơi tương tác và bài luyện cùng AI. Học vui, nhớ lâu và thực hành ngay trên từng cử chỉ! ",
+              desc: "Khám phá thế giới ngôn ngữ ký hiệu qua video minh hoạ, trò chơi tương tác và bài luyện cùng AI. Học vui, nhớ lâu và thực hành ngay từng cử chỉ! ",
               link: "/study/map",
             },
             {
@@ -163,20 +163,26 @@ export default function Home() {
             {
               icon: <Database size={48} />,
               title: "Kho từ vựng",
-              desc: "Tổng hợp hơn 4000+ ký hiệu sinh động với video, hình ảnh và hướng dẫn chi tiết. Dễ tra cứu, dễ hiểu, giúp bạn tự tin sử dụng ngôn ngữ ký hiệu mỗi ngày.",
+              desc: "Tổng hợp hơn 4000+ ký hiệu sinh động với video và hướng dẫn chi tiết. Dễ tra cứu, dễ hiểu, giúp tự tin sử dụng ngôn ngữ ký hiệu mỗi ngày.",
               link: "/dictionary",
             },
-          ].map((tool, idx) => (
-            <Link
-              key={idx}
-              href={tool.link}
-              className="flex flex-col items-center bg-white/10 backdrop-blur-lg rounded-2xl p-8 text-center hover:bg-white/20 transition-all duration-300 cursor-pointer"
-            >
-              <div className="mb-4 text-white">{tool.icon}</div>
-              <h3 className="text-xl font-semibold mb-2">{tool.title}</h3>
-              <p className="text-white/90 text-base">{tool.desc}</p>
-            </Link>
-          ))}
+          ].map((tool, idx) => {
+            const content = (
+              <div className="flex h-full flex-col items-center bg-white/10 backdrop-blur-lg rounded-2xl p-8 text-center hover:bg-white/20 transition-all duration-300">
+                <div className="mb-4 text-white">{tool.icon}</div>
+                <h3 className="text-xl font-semibold mb-2">{tool.title}</h3>
+                <p className="text-white/90 text-base">{tool.desc}</p>
+              </div>
+            );
+
+            return tool.link !== "/community" ? (
+              <Link key={idx} href={tool.link} className="cursor-pointer">
+                {content}
+              </Link>
+            ) : (
+              <div key={idx}>{content}</div>
+            );
+          })}
         </div>
       </section>
 

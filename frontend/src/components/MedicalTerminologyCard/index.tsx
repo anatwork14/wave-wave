@@ -141,60 +141,6 @@ export default function MedicalTerminologyCard({
                         <p>Trao đổi với Mini Wave về chủ đề này.</p>
                       </TooltipContent>
                     </Tooltip>
-
-                    <Separator className="my-1" />
-
-                    {/* Option 2 */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href="/study/learn/test/topic"
-                          className="flex items-center gap-2 px-2 py-2 hover:bg-gray-50 rounded-md transition-colors"
-                          onClick={() => setHasTakenTest(true)}
-                        >
-                          <ClipboardCheck className="w-4 h-4 text-green-500" />
-                          <span>Làm kiểm tra</span>
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          Thực hiện bài kiểm tra để mở khóa tùy chọn bỏ qua.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-
-                    {/* Option 3 (Skip) */}
-                    {lesson.status != "completed" && (
-                      <>
-                        <Separator className="my-1" />
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className={`flex items-center gap-2 px-2 py-2 rounded-md justify-start w-full text-left ${
-                                hasTakenTest
-                                  ? "text-gray-700 hover:bg-gray-50"
-                                  : "opacity-50 cursor-not-allowed"
-                              }`}
-                              onClick={() =>
-                                hasTakenTest && console.log("Bỏ qua chủ đề")
-                              }
-                              disabled={!hasTakenTest}
-                            >
-                              <SkipForward className="w-4 h-4 text-orange-500" />
-                              <span>Bỏ qua chủ đề này</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>
-                              {hasTakenTest
-                                ? "Bỏ qua chủ đề này và tiếp tục bài học tiếp theo."
-                                : "Bạn cần làm kiểm tra trước khi có thể bỏ qua."}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </>
-                    )}
                   </div>
                 </PopoverContent>
               </Popover>
